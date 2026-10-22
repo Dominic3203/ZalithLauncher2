@@ -91,7 +91,7 @@ impl PetModel {
         let s = &mut self.skeleton;
         s.tau_gaze = gaze.max(0.001);
         s.tau_yaw = yaw.max(0.001);
-        s.tau_anim = anim.max(0.001);
+        s.fade_seconds = anim.max(0.001);
         s.tau_recenter = recenter.max(0.001);
     }
 
@@ -144,8 +144,7 @@ impl PetModel {
     }
 
     /// 渲染一帧到 `out`（预乘 RGBA，长度须为 width*height*4）。
-    /// `now`/`dt` 由宿主时钟驱动。
-    /// `dt` 为距上一帧的秒数。
+    /// 内部计时全部由帧间隔 `dt` 驱动；`now` 仅为兼容保留。
     pub fn render(
         &mut self,
         width: usize,
@@ -381,12 +380,12 @@ mod tests {
             )
         };
         for (x, y, z) in [
-            (0., 18., 0.),    // 躯干
-            (0., 28., 0.),    // 头
-            (6., 18., 0.),    // 左臂
-            (-6., 18., 0.),   // 右臂
-            (1.9, 6., -0.1),  // 左腿
-            (-1.9, 6., -0.1), // 右腿
+            (0., 18., 0.),   // 躯干
+            (0., 28., 0.),   // 头
+            (6., 18., 0.),   // 左臂
+            (-6., 18., 0.),  // 右臂
+            (1.9, 6., 0.),   // 左腿
+            (-1.9, 6., 0.),  // 右腿
         ] {
             let want = world(x, y, z);
             assert!(

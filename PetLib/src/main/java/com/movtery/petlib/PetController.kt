@@ -267,7 +267,7 @@ class PetController(
 
     /**
      * 播放点按压扁动画
-     * @param now 动画时钟的当前时间（秒），须与渲染帧使用同一时钟
+     * @param now 兼容保留；内部按帧间隔计时，不读取该值
      */
     fun squashTap(now: Float) {
         post { PetLibNative.nativeSquashTap(ptr, now) }
@@ -275,7 +275,7 @@ class PetController(
 
     /**
      * 播放攻击摆臂动画
-     * @param now 动画时钟的当前时间（秒），须与渲染帧使用同一时钟
+     * @param now 兼容保留；内部按帧间隔计时，不读取该值
      */
     fun playSwing(now: Float) {
         post { PetLibNative.nativePlaySwing(ptr, now) }

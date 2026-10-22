@@ -5,7 +5,7 @@ use glam::{Mat4, Vec2, Vec3};
 use std::sync::OnceLock;
 
 use crate::lighting::Lighting;
-use crate::pose::{self, Skeleton};
+use crate::pose::{self, flip_quat, flip_vec, Skeleton};
 use crate::skin::{ArmModel, Skin, Texture};
 
 /// 投影：弱透视（z 仅用于深度排序），模型竖直居中于视图。
@@ -45,39 +45,57 @@ pub struct SceneParams<'a> {
 }
 
 pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
+    let mut v = Vec::with_capacity(13);
+    parts_into(pose, scene, &mut v);
+    v
+}
+
+/// 把部件列表写入调用方缓冲,供逐帧渲染跨帧复用分配
+pub(crate) fn parts_into(pose: &Skeleton, scene: &SceneParams, v: &mut Vec<BoxPart>) {
+    v.clear();
     let skin = scene.skin;
     let slim = skin.arm == ArmModel::Slim && !skin.legacy;
     let aw = if slim { 3. } else { 4. };
-    // 躯干链是其余部件的父节点，位置增量与旋转以髋部（模型 12px）为枢轴带动头/臂/腿/披风。
+    // 姿态数据为原始 GLTF 基(模型面向 −Z)，经 180°Y 根共轭
+    // (blockbench_export 节点) 换入渲染基，盒体几何与相机保持在渲染基。
+    // 躯干链是头/臂/披风的父节点，位置增量与旋转以髋部（模型 12px）为枢轴带动；
+    // 腿挂在静态髋部下，不随躯干位移/旋转，枢轴由剪辑平移通道驱动以钉住脚底。
     // 各部件平移均为相对髋部的局部偏移，几何偏移以模型像素为单位。
-    let body_chain = Mat4::from_translation(Vec3::new(0., 12., 0.) + pose.body_pos)
-        * Mat4::from_quat(pose.body_rot)
+    let body_chain = Mat4::from_translation(Vec3::new(0., 12., 0.) + flip_vec(pose.body_pos))
+        * Mat4::from_quat(flip_quat(pose.body_rot))
         * Mat4::from_rotation_y(pose.body_yaw);
-    let mut v: Vec<BoxPart> = Vec::with_capacity(13);
+    let hip = Mat4::from_translation(Vec3::new(0., 12., 0.));
     {
-        let mut part =
-            |transform: Mat4, size: Vec3, u: f32, w: f32, outer: Vec2, mirror: bool, hat: bool| {
+        let mut part = |parent: Mat4,
+                        transform: Mat4,
+                        size: Vec3,
+                        u: f32,
+                        w: f32,
+                        outer: Vec2,
+                        mirror: bool,
+                        hat: bool| {
+            v.push(BoxPart {
+                size,
+                uv: Vec2::new(u, w),
+                transform: parent * transform,
+                inflate: 0.,
+                mirror,
+                tex: Tex::Skin,
+            });
+            if scene.outer_layer && (!skin.legacy || hat) {
                 v.push(BoxPart {
                     size,
-                    uv: Vec2::new(u, w),
-                    transform: body_chain * transform,
-                    inflate: 0.,
+                    uv: outer,
+                    transform: parent * transform,
+                    inflate: if hat { 1. } else { 0.5 },
                     mirror,
                     tex: Tex::Skin,
                 });
-                if scene.outer_layer && (!skin.legacy || hat) {
-                    v.push(BoxPart {
-                        size,
-                        uv: outer,
-                        transform: body_chain * transform,
-                        inflate: if hat { 1. } else { 0.5 },
-                        mirror,
-                        tex: Tex::Skin,
-                    });
-                }
-            };
+            }
+        };
         // 躯干：部件原点即盒心（skin 0,-6,0 → 模型 0,18,0），旋转绕髋部。
         part(
+            body_chain,
             Mat4::from_translation(Vec3::Y * 6.),
             Vec3::new(8., 12., 4.),
             16.,
@@ -88,8 +106,9 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
         );
         // 头部：枢轴在颈部（髋部上方 12，模型 0,24,0），盒心上移 4。
         part(
+            body_chain,
             Mat4::from_translation(Vec3::new(0., 12. + pose.head_pos, 0.))
-                * Mat4::from_quat(pose.head)
+                * Mat4::from_quat(flip_quat(pose.head))
                 * Mat4::from_translation(Vec3::Y * 4.),
             Vec3::splat(8.),
             0.,
@@ -101,11 +120,11 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
         for side in 0..2 {
             let left = side == 0;
             let sign = if left { 1. } else { -1. };
-            // 臂：部件原点 (∓5,10,0)（肩点，模型 22px），枢轴组内偏移
+            // 臂：枢轴来自剪辑平移通道（无通道时为肩点），枢轴组内偏移
             // (∓1,−4,0)（纤细 ∓0.5），盒心挂在枢轴上。
             let pivot_x = if slim { 0.5 } else { 1. };
-            let tr = Mat4::from_translation(Vec3::new(sign * 5., 10., 0.))
-                * Mat4::from_quat(pose.arms[side])
+            let tr = Mat4::from_translation(flip_vec(pose.arm_pivots[side]))
+                * Mat4::from_quat(flip_quat(pose.arms[side]))
                 * Mat4::from_translation(Vec3::new(sign * pivot_x, -4., 0.));
             let (u, w, outer) = if left && !skin.legacy {
                 (32., 48., Vec2::new(48., 48.))
@@ -113,6 +132,7 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
                 (40., 16., Vec2::new(40., 32.))
             };
             part(
+                body_chain,
                 tr,
                 Vec3::new(aw, 12., 4.),
                 u,
@@ -124,10 +144,9 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
         }
         for side in 0..2 {
             let left = side == 0;
-            let sign = if left { 1. } else { -1. };
-            // 腿：部件原点 (∓1.9,0,−0.1)（髋点，模型 12px），枢轴组内偏移 (0,−6,0)。
-            let tr = Mat4::from_translation(Vec3::new(sign * 1.9, 0., -0.1))
-                * Mat4::from_quat(pose.legs[side])
+            // 腿：枢轴来自剪辑平移通道（无通道时为髋点），枢轴组内偏移 (0,−6,0)。
+            let tr = Mat4::from_translation(flip_vec(pose.leg_pivots[side]))
+                * Mat4::from_quat(flip_quat(pose.legs[side]))
                 * Mat4::from_translation(Vec3::new(0., -6., 0.));
             let (u, w, outer) = if left && !skin.legacy {
                 (16., 48., Vec2::new(0., 48.))
@@ -135,6 +154,7 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
                 (0., 16., Vec2::new(0., 32.))
             };
             part(
+                hip,
                 tr,
                 Vec3::new(4., 12., 4.),
                 u,
@@ -167,11 +187,11 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
     let anchor = Mat4::from_translation(Vec3::Y * -12.)
         * Mat4::from_scale(Vec3::new(1., pose.squash, 1.))
         * Mat4::from_translation(Vec3::Y * 12.);
-    for part in &mut v {
+    for part in v.iter_mut() {
         part.transform = anchor * part.transform;
     }
     let global = Mat4::from_rotation_y(pose.model_yaw() + pose::front_yaw());
-    for part in &mut v {
+    for part in v.iter_mut() {
         part.transform = global * part.transform;
     }
     // 半透明外层最后绘制，并按相机空间深度排序（对齐 three.js 行为）。
@@ -186,7 +206,6 @@ pub(crate) fn parts(pose: &Skeleton, scene: &SceneParams) -> Vec<BoxPart> {
             }
         })
     });
-    v
 }
 
 pub struct Frame {
@@ -197,6 +216,8 @@ pub struct Frame {
     depth: Vec<f32>,
     pub bounds: [i32; 4],
     resample: Option<Resample>,
+    /// 跨帧复用的部件缓冲
+    parts: Vec<BoxPart>,
 }
 
 impl Frame {
@@ -208,13 +229,16 @@ impl Frame {
             depth: vec![f32::INFINITY; w * h],
             bounds: [0; 4],
             resample: None,
+            parts: Vec::new(),
         }
     }
 
     /// 组装场景并绘制一帧。
     pub fn draw_scene(&mut self, pose: &Skeleton, scene: &SceneParams, light: &Lighting) {
-        let parts = parts(pose, scene);
+        let mut parts = std::mem::take(&mut self.parts);
+        parts_into(pose, scene, &mut parts);
         self.draw(&parts, scene.skin, scene.cape, light);
+        self.parts = parts;
     }
 
     fn draw(&mut self, parts: &[BoxPart], skin: &Skin, cape: Option<&Texture>, light: &Lighting) {

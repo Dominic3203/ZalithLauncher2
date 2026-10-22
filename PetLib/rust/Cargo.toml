@@ -11,6 +11,9 @@ crate-type = ["cdylib", "rlib"]
 glam = "0.30"
 image = { version = "0.25", default-features = false, features = ["png"] }
 
+[dev-dependencies]
+serde_json = "1"
+
 [profile.release]
 opt-level = 3
 lto = true
