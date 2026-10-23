@@ -27,9 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.movtery.zalithlauncher.R
-import com.movtery.zalithlauncher.filemanager.ui.components.FmAlertDialog
 import com.movtery.zalithlauncher.filemanager.ui.components.PropertyRow
 import com.movtery.zalithlauncher.filemanager.viewmodel.DirScanUiState
+import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.utils.file.formatFileSize
 
 /**
@@ -54,7 +54,7 @@ fun FmTrashPropertyDialog(
 ) {
     val dirStats = dirScan?.stats
 
-    FmAlertDialog(
+    SimpleAlertDialog(
         title = stringResource(R.string.fm_property),
         text = {
             Column(
