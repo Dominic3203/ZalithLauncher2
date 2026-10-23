@@ -223,6 +223,46 @@ fun SimpleAlertDialog(
     )
 }
 
+/**
+ * 展示仅带确认按钮的警告对话框
+ *
+ * @param title 对话框标题
+ * @param text 对话框内容
+ * @param onDismiss 点击确认或对话框外部的回调
+ */
+@Composable
+fun SimpleAlertDialog(
+    title: String,
+    text: @Composable () -> Unit = {},
+    confirmText: String = stringResource(R.string.generic_confirm),
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fadeEdge(state = scrollState)
+                    .verticalScrollWithBar(state = scrollState)
+            ) {
+                text()
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                MarqueeText(text = confirmText)
+            }
+        }
+    )
+}
+
 @Composable
 fun SimpleEditDialog(
     title: String,
