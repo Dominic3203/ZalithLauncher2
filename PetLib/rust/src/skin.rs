@@ -11,12 +11,13 @@ pub enum ArmModel {
     Slim,
 }
 
-/// 单张模型纹理（皮肤或披风）。`colors` 与 `image` 像素一一平行，
-/// 存 RGBA 四元组以加速逐像素着色查表。
+/// 单张模型纹理（皮肤或披风）。像素以 RGBA 四元组平铺存储，
+/// 供光栅化逐像素查表着色直接索引。
 #[derive(Clone)]
 pub struct Texture {
-    pub image: RgbaImage,
-    pub colors: Vec<[u8; 4]>,
+    pub width: u32,
+    pub height: u32,
+    pub pixels: Vec<[u8; 4]>,
 }
 
 impl Texture {
@@ -24,8 +25,22 @@ impl Texture {
         let image = image::load_from_memory_with_format(bytes, image::ImageFormat::Png)
             .map_err(|e| e.to_string())?
             .into_rgba8();
-        let colors = image.pixels().map(|p| [p[0], p[1], p[2], p[3]]).collect();
-        Ok(Self { image, colors })
+        Ok(Self::from_image(image))
+    }
+
+    /// 展平为像素四元组：单份存储，解析后即可释放解码图像。
+    fn from_image(image: RgbaImage) -> Self {
+        let (width, height) = (image.width(), image.height());
+        let pixels = image
+            .into_raw()
+            .chunks_exact(4)
+            .map(|p| [p[0], p[1], p[2], p[3]])
+            .collect();
+        Self {
+            width,
+            height,
+            pixels,
+        }
     }
 }
 
@@ -92,9 +107,8 @@ impl Skin {
                 }
             }
         }
-        let colors = image.pixels().map(|p| [p[0], p[1], p[2], p[3]]).collect();
         Ok(Self {
-            texture: Texture { image, colors },
+            texture: Texture::from_image(image),
             legacy,
             arm,
         })
@@ -174,7 +188,8 @@ mod tests {
     fn loads_modern_skin() {
         let skin = Skin::load(&solid_png(64, 64, [255, 0, 0, 255]), None).unwrap();
         assert!(!skin.legacy);
-        assert_eq!(skin.texture.image.width(), 64);
+        assert_eq!(skin.texture.width, 64);
+        assert_eq!(skin.texture.pixels.len(), 64 * 64);
     }
 
     #[test]

@@ -2,13 +2,96 @@
 
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use jni::objects::{JByteArray, JByteBuffer, JClass, JString};
+use jni::objects::{JByteArray, JClass, JObject, JString};
 use jni::sys::{jboolean, jfloat, jint, jlong};
 use jni::JNIEnv;
 
 use crate::animation::AnimationId;
 use crate::api::{LightingParams, PetModel};
 use crate::skin::ArmModel;
+
+mod bitmap {
+    use jni::objects::JObject;
+    use jni::sys::jobject;
+    use jni::sys::JNIEnv as RawJNIEnv;
+    use jni::JNIEnv;
+    use std::ffi::c_void;
+    use std::slice;
+
+    /// ANDROID_BITMAP_FORMAT_RGBA_8888
+    const FORMAT_RGBA_8888: i32 = 1;
+
+    #[repr(C)]
+    struct AndroidBitmapInfo {
+        width: u32,
+        height: u32,
+        stride: u32,
+        format: i32,
+        flags: u32,
+    }
+
+    #[link(name = "jnigraphics")]
+    extern "C" {
+        fn AndroidBitmap_getInfo(
+            env: *mut RawJNIEnv,
+            bitmap: jobject,
+            info: *mut AndroidBitmapInfo,
+        ) -> i32;
+        fn AndroidBitmap_lockPixels(
+            env: *mut RawJNIEnv,
+            bitmap: jobject,
+            addr: *mut *mut c_void,
+        ) -> i32;
+        fn AndroidBitmap_unlockPixels(env: *mut RawJNIEnv, bitmap: jobject) -> i32;
+    }
+
+    /// 锁定位图并返回其像素切片，要求 RGBA_8888、尺寸匹配且行连续。
+    /// 切片存活至 `unlock`，期间位图不得交回渲染管线。
+    pub(super) fn lock(
+        env: &mut JNIEnv,
+        bitmap: &JObject,
+        width: usize,
+        height: usize,
+    ) -> Result<&'static mut [u8], String> {
+        let raw = bitmap.as_raw();
+        let env_ptr = env.get_raw();
+        let mut info = AndroidBitmapInfo {
+            width: 0,
+            height: 0,
+            stride: 0,
+            format: 0,
+            flags: 0,
+        };
+        // SAFETY: info 指向本栈上合法结构，env/raw 为当前线程有效句柄。
+        if unsafe { AndroidBitmap_getInfo(env_ptr, raw, &mut info) } != 0 {
+            return Err("AndroidBitmap_getInfo failed.".into());
+        }
+        if info.format != FORMAT_RGBA_8888
+            || info.width as usize != width
+            || info.height as usize != height
+            || info.stride != info.width * 4
+        {
+            return Err(format!(
+                "Bitmap mismatch: format={} {}x{} stride={}, \
+                 expected RGBA_8888 {width}x{height} with packed rows.",
+                info.format, info.width, info.height, info.stride
+            ));
+        }
+        let mut addr: *mut c_void = std::ptr::null_mut();
+        // SAFETY: addr 指向本栈上合法指针槽。
+        if unsafe { AndroidBitmap_lockPixels(env_ptr, raw, &mut addr) } != 0 || addr.is_null() {
+            return Err("AndroidBitmap_lockPixels failed.".into());
+        }
+        // SAFETY: stride == width*4 保证像素按行连续；切片被宿主约定
+        // 约束在 lock/unlock 区间内使用。
+        Ok(unsafe { slice::from_raw_parts_mut(addr.cast::<u8>(), width * height * 4) })
+    }
+
+    pub(super) fn unlock(env: &mut JNIEnv, bitmap: &JObject) {
+        // SAFETY: env/raw 为当前线程有效句柄。
+        unsafe { AndroidBitmap_unlockPixels(env.get_raw(), bitmap.as_raw()) };
+    }
+}
 
 /// 臂型编码
 /// -1 自动检测，0 经典，1 纤细
@@ -377,26 +460,26 @@ pub extern "system" fn Java_com_movtery_petlib_PetLibNative_nativeRender<'local>
     height: jint,
     now: jfloat,
     dt: jfloat,
-    buffer: JByteBuffer,
+    bitmap: JObject<'local>,
 ) {
     guard(|| {
         // SAFETY: 句柄由宿主渲染线程独占使用。
         let Some(model) = (unsafe { model_from(ptr) }) else {
             return;
         };
-        // SAFETY: 指针与容量来自同一个 direct buffer，生命周期由宿主保证
-        // 覆盖本次调用；写入仅发生在 render 内部。
-        let Ok(address) = env.get_direct_buffer_address(&buffer) else {
-            throw(&mut env, "A direct ByteBuffer is required.");
-            return;
+        let pixels = match bitmap::lock(&mut env, &bitmap, width as usize, height as usize) {
+            Ok(pixels) => pixels,
+            Err(message) => {
+                throw(&mut env, &message);
+                return;
+            }
         };
-        let Ok(capacity) = env.get_direct_buffer_capacity(&buffer) else {
-            throw(&mut env, "A direct ByteBuffer is required.");
-            return;
-        };
-        // SAFETY: address 有效且可写 capacity 字节。
-        let out = unsafe { std::slice::from_raw_parts_mut(address, capacity as usize) };
-        if let Err(e) = model.render(width as usize, height as usize, now, dt, out) {
+        // 即使渲染 panic 也要解锁位图，锁 panic 由外层 guard 兜底。
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            model.render(width as usize, height as usize, now, dt, pixels)
+        }));
+        bitmap::unlock(&mut env, &bitmap);
+        if let Ok(Err(e)) = result {
             throw(&mut env, &e);
         }
     })

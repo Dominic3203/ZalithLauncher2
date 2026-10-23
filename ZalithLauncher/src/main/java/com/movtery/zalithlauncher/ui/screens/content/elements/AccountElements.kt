@@ -1815,7 +1815,7 @@ private fun getDefaultAvatar(
 ): Bitmap {
     return getSkinAvatar(
         skin = BitmapFactory.decodeStream(
-            context.assets.open("steve.png")
+            context.assets.open("skin/steve.png")
         ),
         size = size,
         density = density
