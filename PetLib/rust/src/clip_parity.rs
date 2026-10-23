@@ -10,11 +10,11 @@ use crate::clip_data::{Clip, CLIP_IDLE, CLIP_INTERACT, CLIP_SUBS};
 
 const CLASSIC: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/assets/models/classic-player.gltf"
+    "/../tools/models/classic-player.gltf"
 );
 const SLIM: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/assets/models/slim-player.gltf"
+    "/../tools/models/slim-player.gltf"
 );
 
 const FPS: f32 = 30.0;

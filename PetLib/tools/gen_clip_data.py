@@ -10,9 +10,9 @@ import json
 import struct
 from pathlib import Path
 
-RUST_DIR = Path(__file__).resolve().parent.parent / "rust"
-GLTF_PATH = RUST_DIR / "assets" / "models" / "classic-player.gltf"
-OUT_PATH = RUST_DIR / "src" / "clip_data.rs"
+TOOLS_DIR = Path(__file__).resolve().parent
+GLTF_PATH = TOOLS_DIR / "models" / "classic-player.gltf"
+OUT_PATH = TOOLS_DIR.parent / "rust" / "src" / "clip_data.rs"
 
 PIXELS_PER_UNIT = 16.0
 
@@ -80,10 +80,10 @@ def extract_clip(gltf: dict, name: str) -> dict:
         sampler = anim["samplers"][channel["sampler"]]
         keys = read_accessor(gltf, gltf["_buffer"], sampler["output"])
         times = read_accessor(gltf, gltf["_buffer"], sampler["input"])
-        assert len(times) == len(keys), f"{name}: 键时间与键值数量不一致"
+        assert len(times) == len(keys), f"{name}: time and value key count mismatch"
         step = times[1][0] - times[0][0] if len(times) > 1 else 0.0
         if len(times) > 1:
-            assert abs(step - 1.0 / 30.0) < 1e-4, f"{name}: 键间距 {step} 不在 30fps 网格上"
+            assert abs(step - 1.0 / 30.0) < 1e-4, f"{name}: key spacing {step} off the 30fps grid"
         entry = channels.setdefault(gltf["nodes"][target["node"]]["name"], {})
         entry[target["path"]] = keys
     return channels
@@ -132,7 +132,7 @@ def emit_clip(anim_name: str, static_name: str, doc: str, channels: dict) -> str
 HEADER = """\
 //! Modrinth 启动器玩家模型关键帧动画数据。
 //!
-//! 本文件由 tools/gen_clip_data.py 从 assets/models/classic-player.gltf 生成,勿手动编辑。
+//! 本文件由 tools/gen_clip_data.py 从 tools/models/classic-player.gltf 生成,勿手动编辑。
 //! 参考 https://github.com/modrinth/code/tree/main/packages/assets/models(GPL-3)
 """
 

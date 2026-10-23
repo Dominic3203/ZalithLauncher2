@@ -1,6 +1,6 @@
 //! Modrinth 启动器玩家模型关键帧动画数据。
 //!
-//! 本文件由 tools/gen_clip_data.py 从 assets/models/classic-player.gltf 生成,勿手动编辑。
+//! 本文件由 tools/gen_clip_data.py 从 tools/models/classic-player.gltf 生成,勿手动编辑。
 //! 参考 https://github.com/modrinth/code/tree/main/packages/assets/models(GPL-3)
 
 /// 关键帧采样率(每秒帧数)
@@ -238,3 +238,4 @@ pub(crate) static CLIP_INTERACT: Clip = Clip {
 };
 /// 随机待机子动画集合
 pub(crate) static CLIP_SUBS: &[Clip] = &[CLIP_SUB_1, CLIP_SUB_2, CLIP_SUB_3];
+

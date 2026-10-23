@@ -55,9 +55,9 @@ fun PetController.setSkinDefaultable(
 }
 
 private fun Context.loadDefaultSkin(arm: ArmModel?): ByteArray = if (arm == ArmModel.Slim) {
-    assets.open("alex.png")
+    assets.open("skin/alex.png")
 } else {
-    assets.open("steve.png")
+    assets.open("skin/steve.png")
 }.use { it.readBytes() }
 
 /**
