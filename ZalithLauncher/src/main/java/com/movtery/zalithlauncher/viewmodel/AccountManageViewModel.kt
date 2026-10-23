@@ -42,9 +42,11 @@ import com.movtery.zalithlauncher.game.account.microsoftLogin
 import com.movtery.zalithlauncher.game.account.refreshMicrosoft
 import com.movtery.zalithlauncher.game.account.wardrobe.EmptyCape
 import com.movtery.zalithlauncher.game.account.wardrobe.SkinModelType
+import com.movtery.zalithlauncher.game.account.wardrobe.SkinType
 import com.movtery.zalithlauncher.game.account.wardrobe.capeLocalRes
 import com.movtery.zalithlauncher.game.account.wardrobe.getLocalUUIDWithSkinModel
 import com.movtery.zalithlauncher.game.account.wardrobe.isSlimModel
+import com.movtery.zalithlauncher.game.account.wardrobe.isValid
 import com.movtery.zalithlauncher.game.account.wardrobe.validateSkinFile
 import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
 import com.movtery.zalithlauncher.game.account.yggdrasil.cacheAllCapes
@@ -386,25 +388,31 @@ class AccountManageViewModel @AssistedInject constructor(
             runCatching {
                 context.copyLocalFile(intent.uri, cacheFile)
                 validateSkinFile(cacheFile)
-            }.onSuccess { isValid ->
-                if (!isValid) {
-                    emitError(
-                        androidText(R.string.generic_warning),
-                        androidText(R.string.account_change_skin_invalid)
-                    )
-                    return@onSuccess
-                }
-                val recommendedModel = if (cacheFile.isSlimModel()) {
-                    SkinModelType.ALEX
-                } else {
-                    SkinModelType.STEVE
+            }.onSuccess { skinType ->
+                val data = when (skinType) {
+                    SkinType.DualLayer -> {
+                        val type = if (cacheFile.isSlimModel()) {
+                            SkinModelType.ALEX
+                        } else {
+                            SkinModelType.STEVE
+                        }
+                        ChangeSkin.SkinModel.Model(type)
+                    }
+                    SkinType.Classic -> ChangeSkin.SkinModel.Rejected
+                    SkinType.Invalid -> {
+                        emitError(
+                            androidText(R.string.generic_warning),
+                            androidText(R.string.account_change_skin_invalid)
+                        )
+                        return@onSuccess
+                    }
                 }
 
                 _accountSkinDialogState.update {
                     it.copy(
                         pendingSkinData = ChangeSkin.ChangeSkinData(
                             cacheFile = cacheFile,
-                            skinModel = recommendedModel
+                            data = data
                         )
                     )
                 }
@@ -465,7 +473,7 @@ class AccountManageViewModel @AssistedInject constructor(
                 id = account.uniqueUUID,
                 dispatcher = Dispatchers.IO,
                 task = {
-                    if (validateSkinFile(file)) {
+                    if (validateSkinFile(file).isValid()) {
                         onIntent(
                             AccountManageIntent.UploadMicrosoftSkin(
                                 account = account,
@@ -800,7 +808,7 @@ class AccountManageViewModel @AssistedInject constructor(
         val skinFile = account.getSkinFile()
 
         TaskSystem.submitTask(Task.runTask(dispatcher = Dispatchers.IO, task = {
-            if (validateSkinFile(file)) {
+            if (validateSkinFile(file).isValid()) {
                 account.skinModelType = model
                 account.profileId = getLocalUUIDWithSkinModel(account.username, model)
                 file.copyTo(skinFile, true)
