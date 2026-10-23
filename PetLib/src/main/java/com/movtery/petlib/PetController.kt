@@ -30,8 +30,6 @@ import android.view.Choreographer
 import android.view.Surface
 import androidx.annotation.FloatRange
 import androidx.core.graphics.createBitmap
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -41,6 +39,11 @@ private const val TAG = "PetLib"
 
 /** 连续锁画布失败达到该次数后，判定表面已失效并停止帧驱动 */
 private const val SURFACE_FAILURE_LIMIT = 10
+
+/**
+ * 帧间隔下限
+ */
+private const val MIN_FRAME_INTERVAL_NANOS = 1_000_000_000L / 60L * 9L / 10L
 
 /** 归一化到 (-π, π]，供最短路径回正 */
 private fun wrapPi(angle: Float): Float {
@@ -392,8 +395,11 @@ class PetController(
         }
     }
 
-    private fun onSurfaceFailure(surface: Surface) {
+    private fun onSurfaceFailure(surface: Surface, error: Exception? = null) {
         surfaceFailures++
+        if (error != null) {
+            Log.w(TAG, "Frame failed: $error")
+        }
         if (surfaceFailures >= SURFACE_FAILURE_LIMIT && surfaceRef.compareAndSet(surface, null)) {
             // 连续失败判定废弃并停帧
             attachedSurface = null
@@ -408,8 +414,13 @@ class PetController(
         val height = heightHint.get()
         if (width <= 0 || height <= 0) return
 
-        // 帧计时取自渲染线程的真实出帧间隔，帧率下降时动画仍按真实时间推进
+        // 帧率上限：跳过的帧不推进计时基准，帧间隔随之累积，动画按真实时间推进不受采样率影响
         val startedNanos = System.nanoTime()
+        if (lastRenderNanos != 0L && startedNanos - lastRenderNanos < MIN_FRAME_INTERVAL_NANOS) {
+            return
+        }
+
+        // 帧计时取自渲染线程的真实出帧间隔，帧率下降时动画仍按真实时间推进
         val dt = if (lastRenderNanos == 0L) {
             1f / 60f
         } else {
@@ -421,11 +432,11 @@ class PetController(
         // native 层打印错误。先锁画布再渲染，失败帧不产生渲染开销。
         val canvas = try {
             surface.lockCanvas(null)
-        } catch (_: IllegalStateException) {
-            onSurfaceFailure(surface)
+        } catch (e: IllegalStateException) {
+            onSurfaceFailure(surface, e)
             return
-        } catch (_: IllegalArgumentException) {
-            onSurfaceFailure(surface)
+        } catch (e: IllegalArgumentException) {
+            onSurfaceFailure(surface, e)
             return
         } ?: run {
             onSurfaceFailure(surface)
@@ -434,29 +445,34 @@ class PetController(
         try {
             var back = backBuffer
             if (back == null || back.bitmap.width != width || back.bitmap.height != height) {
-                back = FrameBuffer(
-                    createBitmap(width, height),
-                    ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder())
-                )
+                back = FrameBuffer(createBitmap(width, height))
                 backBuffer = back
             }
-            back.buffer.rewind()
-            PetLibNative.nativeRender(ptr, width, height, startedNanos / 1_000_000_000f, dt, back.buffer)
-            back.buffer.rewind()
-            back.bitmap.copyPixelsFromBuffer(back.buffer)
+            // 渲染直写位图像素，位图为预乘 RGBA，随 SRC 模式整幅覆写画布
+            PetLibNative.nativeRender(ptr, width, height, startedNanos / 1_000_000_000f, dt, back.bitmap)
             // 交换：刚完成的帧转为待提交，旧的前台缓冲留给下一轮光栅
             val previousFront = frontBuffer
             frontBuffer = back
             backBuffer = previousFront
             canvas.drawBitmap(back.bitmap, 0f, 0f, overwritePaint)
             surface.unlockCanvasAndPost(canvas)
-        } catch (_: IllegalArgumentException) {
-            // surface 可能在锁画布与提交之间被视图销毁侧废弃，提交即抛；
-            // 与锁失败同样按 surface 故障计数处理，不能让异常杀死渲染线程。
-            onSurfaceFailure(surface)
+        } catch (e: IllegalArgumentException) {
+            // 原生渲染失败或 surface 在锁画布与提交之间被废弃。先释放画布锁，
+            // 单帧失败不得级联堵死后续帧，再按 surface 故障计数处理。
+            try {
+                surface.unlockCanvasAndPost(canvas)
+            } catch (suppressed: Exception) {
+                e.addSuppressed(suppressed)
+            }
+            onSurfaceFailure(surface, e)
             return
-        } catch (_: IllegalStateException) {
-            onSurfaceFailure(surface)
+        } catch (e: IllegalStateException) {
+            try {
+                surface.unlockCanvasAndPost(canvas)
+            } catch (suppressed: Exception) {
+                e.addSuppressed(suppressed)
+            }
+            onSurfaceFailure(surface, e)
             return
         }
         surfaceFailures = 0
@@ -468,5 +484,6 @@ class PetController(
         }
     }
 
-    private class FrameBuffer(val bitmap: Bitmap, val buffer: ByteBuffer)
+    /** 帧缓冲：原生侧渲染结果直接落入位图像素 */
+    private class FrameBuffer(val bitmap: Bitmap)
 }

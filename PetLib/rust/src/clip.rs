@@ -209,14 +209,17 @@ impl IdleClips {
     /// 随机挑一个子动画，排除上一次播放的
     fn pick_sub(&mut self) -> usize {
         let count = CLIP_SUBS.len();
-        let excluded = self.last_sub;
-        let candidates: Vec<usize> = (0..count).filter(|&i| Some(i) != excluded).collect();
-        let pool: Vec<usize> = if candidates.is_empty() {
-            (0..count).collect()
+        if count == 0 {
+            return 0;
+        }
+        let excluded = self.last_sub.filter(|_| count > 1);
+        let pool = count - usize::from(excluded.is_some());
+        let pick = next_rand(&mut self.rng) as usize % pool;
+        if excluded.is_some_and(|last| pick >= last) {
+            pick + 1
         } else {
-            candidates
-        };
-        pool[next_rand(&mut self.rng) as usize % pool.len()]
+            pick
+        }
     }
 }
 

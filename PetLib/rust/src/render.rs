@@ -5,6 +5,7 @@ use glam::{Mat4, Vec2, Vec3};
 use std::sync::OnceLock;
 
 use crate::lighting::Lighting;
+use crate::pool;
 use crate::pose::{self, flip_quat, flip_vec, Skeleton};
 use crate::skin::{ArmModel, Skin, Texture};
 
@@ -211,7 +212,7 @@ pub(crate) fn parts_into(pose: &Skeleton, scene: &SceneParams, v: &mut Vec<BoxPa
 pub struct Frame {
     pub width: usize,
     pub height: usize,
-    /// 预乘 BGRA。
+    /// 预乘 RGBA。
     pub pixels: Vec<u8>,
     depth: Vec<f32>,
     pub bounds: [i32; 4],
@@ -288,54 +289,91 @@ impl Frame {
         let height = self.height;
         let band_count = threads * 4;
         let rows_per_band = height.div_ceil(band_count);
-        let mut groups: Vec<Vec<Band>> = (0..threads).map(|_| Vec::new()).collect();
-        let mut rest_pixels = self.pixels.as_mut_slice();
-        let mut rest_depth = self.depth.as_mut_slice();
+        let mut raster_jobs: Vec<RasterJob> = Vec::with_capacity(band_count);
         let mut start_row = 0;
-        let mut index = 0;
         while start_row < height {
             let end_row = (start_row + rows_per_band).min(height);
-            let (band_pixels, tail_pixels) = rest_pixels.split_at_mut((end_row - start_row) * width * 4);
-            let (band_depth, tail_depth) = rest_depth.split_at_mut((end_row - start_row) * width);
-            rest_pixels = tail_pixels;
-            rest_depth = tail_depth;
-            groups[index % threads].push(Band {
-                pixels: band_pixels,
-                depth: band_depth,
+            raster_jobs.push(RasterJob {
+                parts: parts.as_ptr(),
+                parts_len: parts.len(),
+                skin: &skin.texture,
+                cape: cape.map_or(std::ptr::null(), |t| t as *const Texture),
+                light,
+                pixels: self.pixels.as_mut_ptr(),
+                depth: self.depth.as_mut_ptr(),
                 width,
                 height,
                 start_row,
                 end_row,
                 bounds: empty,
             });
-            index += 1;
             start_row = end_row;
         }
-        self.bounds = std::thread::scope(|scope| {
-            let mut handles = Vec::with_capacity(groups.len());
-            for group in groups {
-                handles.push(scope.spawn(move || {
-                    let mut acc = empty;
-                    for mut band in group {
-                        for part in parts {
-                            let tex = match part.tex {
-                                Tex::Skin => &skin.texture,
-                                Tex::Cape => cape.expect("cape part without cape texture"),
-                            };
-                            draw_box(&mut band, part, tex, light);
-                        }
-                        acc = merge_bounds(acc, band.bounds);
-                    }
-                    acc
-                }));
-            }
-            handles
-                .into_iter()
-                .map(|handle| handle.join().expect("raster thread panicked"))
-                .reduce(merge_bounds)
-                .unwrap_or(empty)
-        });
+        let jobs: Vec<pool::Job> = raster_jobs
+            .iter_mut()
+            .map(|job| pool::Job {
+                run: run_raster_job,
+                arg: (job as *mut RasterJob).cast(),
+            })
+            .collect();
+        pool::run_jobs(&jobs, threads - 1);
+        self.bounds = raster_jobs
+            .iter()
+            .map(|job| job.bounds)
+            .reduce(merge_bounds)
+            .unwrap_or(empty);
     }
+}
+
+/// 并行光栅任务的共享上下文。
+struct RasterJob {
+    parts: *const BoxPart,
+    parts_len: usize,
+    skin: *const Texture,
+    /// 空指针表示无披风
+    cape: *const Texture,
+    light: *const Lighting,
+    pixels: *mut u8,
+    depth: *mut f32,
+    width: usize,
+    height: usize,
+    start_row: usize,
+    end_row: usize,
+    bounds: [i32; 4],
+}
+
+unsafe fn run_raster_job(arg: *mut ()) {
+    let job = &mut *(arg as *mut RasterJob);
+    let rows = job.end_row - job.start_row;
+    let mut band = Band {
+        // SAFETY: 行区间由提交方划分互不重叠，帧缓冲覆盖全部行。
+        pixels: std::slice::from_raw_parts_mut(
+            job.pixels.add(job.start_row * job.width * 4),
+            rows * job.width * 4,
+        ),
+        depth: std::slice::from_raw_parts_mut(
+            job.depth.add(job.start_row * job.width),
+            rows * job.width,
+        ),
+        width: job.width,
+        height: job.height,
+        start_row: job.start_row,
+        end_row: job.end_row,
+        bounds: [job.width as i32, job.height as i32, 0, 0],
+    };
+    // SAFETY: parts/skin/light/cape 来自提交方调用栈，任务期间有效；
+    // cape 仅在披风纹理存在时非空，而披风部件只在存在披风时入列。
+    let parts = std::slice::from_raw_parts(job.parts, job.parts_len);
+    let skin = &*job.skin;
+    let light = &*job.light;
+    for part in parts {
+        let tex = match part.tex {
+            Tex::Skin => skin,
+            Tex::Cape => job.cape.as_ref().expect("cape part without cape texture"),
+        };
+        draw_box(&mut band, part, tex, light);
+    }
+    job.bounds = band.bounds;
 }
 
 /// 一段行区间及其独占的颜色/深度切片
@@ -520,7 +558,10 @@ fn triangle(band: &mut Band, p: [Vec3; 3], uv: [Vec2; 3], tex: &Texture, lut: &[
             .ceil()
             .min(band.height as f32)
             .min(band.end_row as f32) as usize;
-        let texscale = tex.image.width() as f32 / 64.;
+        if minx >= maxx || miny >= maxy {
+            return;
+        }
+        let texscale = tex.width as f32 / 64.;
         let inv_area = area.recip();
         let ax = -(p[2].y - p[1].y) * inv_area;
         let ay = (p[2].x - p[1].x) * inv_area;
@@ -556,56 +597,79 @@ fn triangle(band: &mut Band, p: [Vec3; 3], uv: [Vec2; 3], tex: &Texture, lut: &[
                 dx * (miny as i64 * 256 + 128 - s.1) - dy * (minx as i64 * 256 + 128 - s.0) + bias,
             )
         });
+        // 逐像素 x 步进的覆盖增量（dy·256 为移位常量乘），纯整数增量免乘法
+        let steps = edges.map(|(_, dy, _)| dy * 256);
+        let tex_w = tex.width as usize;
         for y in miny..maxy {
             let row = (y - band.start_row) * band.width;
+            let depth_row = &mut band.depth[row + minx..row + maxx];
+            let pixel_row = &mut band.pixels[(row + minx) * 4..(row + maxx) * 4];
+            let step_y = (y - miny) as i64 * 256;
+            let mut coverage = edges.map(|(dx, _, start)| start + dx * step_y);
             let row_a = a0 + (y - miny) as f32 * ay;
             let row_c = c0 + (y - miny) as f32 * cy;
-            let coverage = edges.map(|(dx, _, start)| start + dx * (y - miny) as i64 * 256);
-            for x in minx..maxx {
-                if (0..3).any(|e| coverage[e] - edges[e].1 * (x - minx) as i64 * 256 < 0) {
+            // 行级写入区间，行末并回包围盒，免逐像素四次 min/max
+            let mut wrote = false;
+            let mut row_lo = 0usize;
+            let mut row_hi = 0usize;
+            for (i, (depth, px)) in depth_row
+                .iter_mut()
+                .zip(pixel_row.chunks_exact_mut(4))
+                .enumerate()
+            {
+                let covered = coverage[0] >= 0 && coverage[1] >= 0 && coverage[2] >= 0;
+                coverage = [
+                    coverage[0] - steps[0],
+                    coverage[1] - steps[1],
+                    coverage[2] - steps[2],
+                ];
+                if !covered {
                     continue;
                 }
-                let a = row_a + (x - minx) as f32 * ax;
-                let c = row_c + (x - minx) as f32 * cx;
+                let a = row_a + i as f32 * ax;
+                let c = row_c + i as f32 * cx;
                 let z = p[1].z + za * a + zc * c;
-                let i = row + x;
-                if z >= band.depth[i] {
+                if z >= *depth {
                     continue;
                 }
                 let tx = t[1].x + ta.x * a + tc.x * c;
                 let ty = t[1].y + ta.y * a + tc.y * c;
-                let xx = (tx as u32).min(tex.image.width() - 1);
-                let yy = (ty as u32).min(tex.image.height() - 1);
-                let ti = (yy * tex.image.width() + xx) as usize;
-                let base = &tex.colors[ti];
+                let xx = (tx as u32).min(tex.width - 1) as usize;
+                let yy = (ty as u32).min(tex.height - 1) as usize;
+                let base = tex.pixels[yy * tex_w + xx];
                 if base[3] < 16 {
                     continue;
                 }
                 let alpha = base[3];
-                let color = [
-                    lut[0][base[0] as usize],
-                    lut[1][base[1] as usize],
-                    lut[2][base[2] as usize],
-                ];
-                let off = i * 4;
                 if alpha == 255 {
-                    band.pixels[off..off + 4].copy_from_slice(&[color[2], color[1], color[0], 255]);
+                    px.copy_from_slice(&[
+                        lut[0][base[0] as usize],
+                        lut[1][base[1] as usize],
+                        lut[2][base[2] as usize],
+                        255,
+                    ]);
                 } else {
                     let aa = alpha as u32;
                     let inv = 255 - aa;
-                    let channels = [color[2], color[1], color[0]];
                     for ch in 0..3 {
-                        band.pixels[off + ch] =
-                            ((channels[ch] as u32 * aa + band.pixels[off + ch] as u32 * inv + 127)
-                                / 255) as u8;
+                        px[ch] = ((u32::from(lut[ch][base[ch] as usize]) * aa
+                            + u32::from(px[ch]) * inv
+                            + 127)
+                            / 255) as u8;
                     }
-                    band.pixels[off + 3] =
-                        (aa + (band.pixels[off + 3] as u32 * inv + 127) / 255) as u8;
+                    px[3] = (aa + (u32::from(px[3]) * inv + 127) / 255) as u8;
                 }
-                band.depth[i] = z;
-                band.bounds[0] = band.bounds[0].min(x as i32);
+                *depth = z;
+                if !wrote {
+                    row_lo = i;
+                    wrote = true;
+                }
+                row_hi = i;
+            }
+            if wrote {
+                band.bounds[0] = band.bounds[0].min((minx + row_lo) as i32);
                 band.bounds[1] = band.bounds[1].min(y as i32);
-                band.bounds[2] = band.bounds[2].max(x as i32 + 1);
+                band.bounds[2] = band.bounds[2].max((minx + row_hi + 1) as i32);
                 band.bounds[3] = band.bounds[3].max(y as i32 + 1);
             }
         }
@@ -618,18 +682,17 @@ impl Frame {
     pub fn present_into(&mut self, out: &mut [u8], w: usize, h: usize) {
         debug_assert_eq!(out.len(), w * h * 4);
         if self.width == w && self.height == h {
-            for (src, dst) in self.pixels.chunks_exact(4).zip(out.chunks_exact_mut(4)) {
-                dst.copy_from_slice(&[src[2], src[1], src[0], src[3]]);
-            }
+            // 内部即 RGBA，同尺寸直出为整幅拷贝
+            out.copy_from_slice(&self.pixels);
         } else if self.width > w && self.height > h {
             let threads = raster_threads(w, h);
+            let src_width = self.width;
             if self.width == w * 2 && self.height == h * 2 {
                 // 精确 2×2 降采样：每个源像素权重恰为 256/256，与通用权重路径
                 // 等价，直接四像素求和免去逐权重乘加。
-                let pixels = &self.pixels[..];
-                let src_width = self.width;
-                parallel_rows(out, w, h, threads, |rows, y0| {
-                    downsample_exact2(pixels, src_width, rows, w, y0)
+                let src = self.pixels.as_slice();
+                parallel_downsample(out, w, h, threads, |out, y0| {
+                    downsample_exact2(src, src_width, out, w, y0)
                 });
             } else {
                 if self.resample.as_ref().map(|r| r.source) != Some((self.width, self.height)) {
@@ -639,11 +702,10 @@ impl Frame {
                         rows: box_filter(self.height, h),
                     });
                 }
-                let pixels = &self.pixels[..];
-                let src_width = self.width;
+                let src = self.pixels.as_slice();
                 let resample = self.resample.as_ref().unwrap();
-                parallel_rows(out, w, h, threads, |rows, y0| {
-                    downsample_weighted(pixels, src_width, resample, rows, w, y0)
+                parallel_downsample(out, w, h, threads, |out, y0| {
+                    downsample_weighted(src, src_width, resample, out, w, y0)
                 });
             }
         } else {
@@ -658,12 +720,8 @@ impl Frame {
                     for x in 0..w {
                         let sx = x * self.width / w;
                         let src = (sy * self.width + sx) * 4;
-                        out[dst_off + x * 4..dst_off + x * 4 + 4].copy_from_slice(&[
-                            self.pixels[src + 2],
-                            self.pixels[src + 1],
-                            self.pixels[src],
-                            self.pixels[src + 3],
-                        ]);
+                        out[dst_off + x * 4..dst_off + x * 4 + 4]
+                            .copy_from_slice(&self.pixels[src..src + 4]);
                     }
                 }
             }
@@ -671,8 +729,9 @@ impl Frame {
     }
 }
 
-/// 按输出行区间并行执行 `draw`：区间互不重叠，各行结果只依赖自身行号。
-fn parallel_rows(
+/// 按行区间把降采样任务交常驻线程池并行执行；区间互不重叠，
+/// 各行结果只依赖自身行号。
+fn parallel_downsample(
     out: &mut [u8],
     w: usize,
     h: usize,
@@ -683,19 +742,47 @@ fn parallel_rows(
         draw(out, 0);
         return;
     }
-    let draw = &draw;
     let rows_per_band = h.div_ceil(threads);
-    std::thread::scope(|scope| {
-        let mut rest = out;
-        let mut start = 0;
-        while start < h {
-            let end = (start + rows_per_band).min(h);
-            let (chunk, tail) = rest.split_at_mut((end - start) * w * 4);
-            rest = tail;
-            scope.spawn(move || draw(chunk, start));
-            start = end;
-        }
-    });
+    let mut present_jobs: Vec<PresentJob> = Vec::with_capacity(threads);
+    let mut start = 0;
+    while start < h {
+        let rows = (start + rows_per_band).min(h) - start;
+        present_jobs.push(PresentJob {
+            draw: &draw,
+            out: out.as_mut_ptr(),
+            w,
+            y0: start,
+            rows,
+        });
+        start += rows;
+    }
+    let jobs: Vec<pool::Job> = present_jobs
+        .iter_mut()
+        .map(|job| pool::Job {
+            run: run_present_job,
+            arg: (job as *mut PresentJob).cast(),
+        })
+        .collect();
+    pool::run_jobs(&jobs, threads - 1);
+}
+
+/// 并行降采样任务。
+/// SAFETY: `draw` 指向提交方栈上的闭包，行区间互不重叠，
+/// 全部引用由 `pool::run_jobs` 的完成等待约束在运行期内。
+struct PresentJob<'a> {
+    draw: &'a (dyn Fn(&mut [u8], usize) + Sync),
+    out: *mut u8,
+    w: usize,
+    y0: usize,
+    rows: usize,
+}
+
+unsafe fn run_present_job(arg: *mut ()) {
+    let job = &*(arg as *const PresentJob);
+    // SAFETY: 行区间由提交方划分互不重叠，out 覆盖整个目标缓冲。
+    let chunk =
+        std::slice::from_raw_parts_mut(job.out.add(job.y0 * job.w * 4), job.rows * job.w * 4);
+    (job.draw)(chunk, job.y0);
 }
 
 /// 目标第 [y0, y0 + 行数) 行的精确 2×2 盒式平均。
@@ -707,12 +794,12 @@ fn downsample_exact2(pixels: &[u8], src_width: usize, out: &mut [u8], w: usize, 
         for x in 0..w {
             let l = x * 8;
             let out_off = (row * w + x) * 4;
-            for (dst_ch, src_ch) in [(0usize, 2usize), (1, 1), (2, 0), (3, 3)] {
-                let sum = u32::from(pixels[src_row + l + src_ch])
-                    + u32::from(pixels[src_row + l + 4 + src_ch])
-                    + u32::from(pixels[src_row + src_width * 4 + l + src_ch])
-                    + u32::from(pixels[src_row + src_width * 4 + l + 4 + src_ch]);
-                out[out_off + dst_ch] = ((sum + 2) >> 2) as u8;
+            for ch in 0..4 {
+                let sum = u32::from(pixels[src_row + l + ch])
+                    + u32::from(pixels[src_row + l + 4 + ch])
+                    + u32::from(pixels[src_row + src_width * 4 + l + ch])
+                    + u32::from(pixels[src_row + src_width * 4 + l + 4 + ch]);
+                out[out_off + ch] = ((sum + 2) >> 2) as u8;
             }
         }
     }
@@ -745,9 +832,9 @@ fn downsample_weighted(
             }
             let out_off = (row * w + x) * 4;
             out[out_off..out_off + 4].copy_from_slice(&[
-                ((acc[2] + total / 2) / total) as u8,
-                ((acc[1] + total / 2) / total) as u8,
                 ((acc[0] + total / 2) / total) as u8,
+                ((acc[1] + total / 2) / total) as u8,
+                ((acc[2] + total / 2) / total) as u8,
                 ((acc[3] + total / 2) / total) as u8,
             ]);
         }
@@ -813,21 +900,21 @@ mod tests {
     #[test]
     fn downsample_averages_premultiplied_colors() {
         let mut frame = Frame::new(4, 4);
-        // 两行不透明红（预乘 BGRA），两行半透明红。
+        // 两行不透明红（预乘 RGBA），两行半透明红。
         for y in 0..4 {
             for x in 0..4 {
                 let off = (y * 4 + x) * 4;
                 let v = if y < 2 {
-                    [0, 0, 255, 255]
+                    [255, 0, 0, 255]
                 } else {
-                    [0, 0, 128, 128]
+                    [128, 0, 0, 128]
                 };
                 frame.pixels[off..off + 4].copy_from_slice(&v);
             }
         }
         let mut out = vec![0u8; 2 * 2 * 4];
         frame.present_into(&mut out, 2, 2);
-        // 上行 = 不透明红；下行 = 一半透明 → 预乘减半。输出为 RGBA。
+        // 上行 = 不透明红；下行 = 一半透明 → 预乘减半。
         assert_eq!(&out[0..4], &[255, 0, 0, 255]);
         assert_eq!(&out[4..8], &[255, 0, 0, 255]);
         assert_eq!(&out[8..12], &[128, 0, 0, 128]);
@@ -850,15 +937,15 @@ mod tests {
         for y in 0..2 {
             for x in 0..2 {
                 let mut expected = [0u8; 4];
-                for (dst_ch, src_ch) in [(0usize, 2usize), (1, 1), (2, 0), (3, 3)] {
+                for ch in 0..4 {
                     let mut acc = 0u32;
                     for dy in 0..2 {
                         for dx in 0..2 {
-                            let si = ((y * 2 + dy) * 4 + x * 2 + dx) * 4 + src_ch;
+                            let si = ((y * 2 + dy) * 4 + x * 2 + dx) * 4 + ch;
                             acc += u32::from(frame.pixels[si]) * 65536;
                         }
                     }
-                    expected[dst_ch] = ((acc + 131072) / 262144) as u8;
+                    expected[ch] = ((acc + 131072) / 262144) as u8;
                 }
                 let off = (y * 2 + x) * 4;
                 assert_eq!(&out[off..off + 4], &expected, "pixel ({x},{y})");
