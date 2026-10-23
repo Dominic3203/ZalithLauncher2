@@ -32,6 +32,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 
 private const val TAG = "AllModReader"
 
@@ -55,7 +56,12 @@ class AllModReader(val modsDir: File) {
     suspend fun readAllForRemote(): List<RemoteMod> = withContext(Dispatchers.IO) {
         //扫描文件，封装任务
         val results = readAllMods { RemoteMod(localMod = it) }
-        return@withContext results.sortedBy { it.localMod.file.name }
+        return@withContext results.sortedWith(
+            compareBy(
+                { mod: RemoteMod -> mod.localMod.file.name.lowercase(Locale.ROOT) },
+                { mod: RemoteMod -> mod.localMod.file.name }
+            )
+        )
     }
 
     /**
