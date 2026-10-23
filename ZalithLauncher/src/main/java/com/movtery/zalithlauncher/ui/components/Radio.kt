@@ -101,6 +101,7 @@ fun RadioCard(
             RadioButton(
                 selected = selected,
                 onClick = onClick,
+                enabled = enabled,
                 colors = radioColors,
                 interactionSource = interactionSource
             )

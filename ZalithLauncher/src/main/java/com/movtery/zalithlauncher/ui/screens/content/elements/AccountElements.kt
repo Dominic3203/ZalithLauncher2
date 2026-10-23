@@ -38,7 +38,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -62,7 +61,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -151,6 +149,7 @@ import com.movtery.zalithlauncher.ui.components.SingleLineTextCheck
 import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
 import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
+import com.movtery.zalithlauncher.ui.screens.content.elements.ChangeSkin.SkinModel
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.InfoLayoutTextItem
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.itemColor
@@ -601,7 +600,6 @@ private fun PreviewLoginItem() {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MicrosoftLoginTipDialog(
     onDismissRequest: () -> Unit = {},
@@ -708,14 +706,11 @@ fun LocalLoginDialog(
 
     /** 用户UUID是否无效 */
     val isUserUUIDInvalid: Boolean = remember(userUUID) {
-        if (userUUID.isEmpty()) false
-        else {
-            runCatching {
-                accountUUID(userUUID)
-                false
-            }.getOrElse {
-                true
-            }
+        userUUID.isNotEmpty() && runCatching {
+            accountUUID(userUUID)
+            false
+        }.getOrElse {
+            true
         }
     }
 
@@ -1277,13 +1272,30 @@ sealed interface ChangeSkin {
 
     data class ChangeSkinData(
         val cacheFile: File,
-        val skinModel: SkinModelType = SkinModelType.STEVE
+        val data: SkinModel
     ) : ChangeSkin
 
     /**
      * 重置离线皮肤
      */
     data object ResetSkin : ChangeSkin
+
+    sealed interface SkinModel {
+        /** 拒绝选择皮肤模型 */
+        data object Rejected : SkinModel
+        data class Model(val model: SkinModelType): SkinModel
+        /** @return 获取模型类型 */
+        fun getModelType(): SkinModelType = when (this) {
+            is Rejected -> SkinModelType.STEVE
+            is Model -> model
+        }
+
+        /** @return 获取模型类型 */
+        fun getModelTypeNullable(): SkinModelType? = when (this) {
+            is Rejected -> null
+            is Model -> model
+        }
+    }
 }
 
 /**
@@ -1296,7 +1308,6 @@ sealed interface ChangeCape {
     ) : ChangeCape
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChangeSkinDialog(
     account: Account,
@@ -1365,13 +1376,13 @@ fun ChangeSkinDialog(
 
     // 皮肤状态变化时重载预览皮肤
     val previewSkin by produceState<ByteArray?>(null, skinState) {
-        value = when (val state = skinState) {
+        value = when (skinState) {
             ChangeSkin.None -> account.getSkinFile()
                 .takeIf { it.exists() }
                 ?.inputStream()
                 ?.use { it.readBytes() }
             is ChangeSkin.ChangeSkinData -> runCatching {
-                state.cacheFile
+                skinState.cacheFile
                     .inputStream()
                     .use { it.readBytes() }
             }.getOrNull()
@@ -1380,7 +1391,7 @@ fun ChangeSkinDialog(
     }
     val previewArm = when (skinState) {
         ChangeSkin.None -> account.skinModelType.toArmModel()
-        is ChangeSkin.ChangeSkinData -> skinState.skinModel.toArmModel()
+        is ChangeSkin.ChangeSkinData -> skinState.data.getModelType().toArmModel()
         ChangeSkin.ResetSkin -> ArmModel.Classic
     }
 
@@ -1472,6 +1483,8 @@ fun ChangeSkinDialog(
                                 }
 
                                 is ChangeSkin.ChangeSkinData -> {
+                                    val model = skinState.data.getModelTypeNullable()
+
                                     Column(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1487,24 +1500,26 @@ fun ChangeSkinDialog(
                                         ) {
                                             //粗臂
                                             RadioCard(
-                                                selected = skinState.skinModel == SkinModelType.STEVE,
+                                                selected = model == SkinModelType.STEVE,
+                                                enabled = skinState.data !is SkinModel.Rejected,
                                                 text = stringResource(R.string.account_change_skin_arm_wide),
                                                 onClick = {
                                                     onSkinStateChange(
                                                         skinState.copy(
-                                                            skinModel = SkinModelType.STEVE
+                                                            data = SkinModel.Model(SkinModelType.STEVE)
                                                         )
                                                     )
                                                 }
                                             )
                                             //细臂
                                             RadioCard(
-                                                selected = skinState.skinModel == SkinModelType.ALEX,
+                                                selected = model == SkinModelType.ALEX,
+                                                enabled = skinState.data !is SkinModel.Rejected,
                                                 text = stringResource(R.string.account_change_skin_arm_slim),
                                                 onClick = {
                                                     onSkinStateChange(
                                                         skinState.copy(
-                                                            skinModel = SkinModelType.ALEX
+                                                            data = SkinModel.Model(SkinModelType.ALEX)
                                                         )
                                                     )
                                                 }
@@ -1581,7 +1596,7 @@ fun ChangeSkinDialog(
                             onClick = {
                                 when (skinState) {
                                     is ChangeSkin.ChangeSkinData -> {
-                                        onApplySkin(skinState.cacheFile, skinState.skinModel)
+                                        onApplySkin(skinState.cacheFile, skinState.data.getModelType())
                                     }
 
                                     is ChangeSkin.ResetSkin -> {
