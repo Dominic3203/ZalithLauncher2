@@ -85,6 +85,7 @@ import com.movtery.zalithlauncher.ui.components.EdgeDirection
 import com.movtery.zalithlauncher.ui.components.OwnOutlinedTextField
 import com.movtery.zalithlauncher.ui.components.TextRailItem
 import com.movtery.zalithlauncher.ui.components.fadeEdge
+import com.movtery.zalithlauncher.ui.components.topBarWheelFallback
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.FilterListLayout
@@ -300,6 +301,7 @@ private fun FavoritesContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .topBarWheelFallback(topAppBarState)
                     .clipToBounds()
                     .topFade(listTopFadePx),
                 state = listState,

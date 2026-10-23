@@ -92,6 +92,7 @@ import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.ScalingActionButton
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.fadeEdge
+import com.movtery.zalithlauncher.ui.components.topBarWheelFallback
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.CleanupOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.GamePathItemLayout
@@ -523,6 +524,7 @@ private fun VersionsLayout(
                         modifier = Modifier
                             .fillMaxSize()
                             .nestedScroll(scrollBehavior.nestedScrollConnection)
+                            .topBarWheelFallback(topAppBarState)
                             .nonInteractiveScrollbar(
                                 state = listState.scrollIndicatorState!!,
                                 orientation = Orientation.Vertical,
