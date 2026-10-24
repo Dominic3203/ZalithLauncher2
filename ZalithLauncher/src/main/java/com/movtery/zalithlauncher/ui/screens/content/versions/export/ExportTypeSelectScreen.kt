@@ -142,21 +142,11 @@ fun ExportTypeSelectScreen(
                     //CurseForge
                     TypeItem(
                         modifier = Modifier.fillMaxWidth(),
-                        position = CardPosition.Middle,
+                        position = CardPosition.Bottom,
                         title = stringResource(R.string.versions_export_type_curseforge),
                         summary = stringResource(R.string.versions_export_type_summary_common),
                         icon = painterResource(R.drawable.img_platform_curseforge),
                         onClick = { onTypeSelect(PackType.CurseForge) }
-                    )
-
-                    //MultiMC
-                    TypeItem(
-                        modifier = Modifier.fillMaxWidth(),
-                        position = CardPosition.Bottom,
-                        title = stringResource(R.string.versions_export_type_multimc),
-                        summary = stringResource(R.string.versions_export_type_multimc_summary, BuildKeys.LAUNCHER_SHORT_NAME),
-                        icon = painterResource(R.drawable.img_platform_multimc),
-                        onClick = { onTypeSelect(PackType.MultiMC) }
                     )
                 }
             }

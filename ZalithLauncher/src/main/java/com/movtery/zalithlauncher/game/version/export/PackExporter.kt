@@ -29,7 +29,6 @@ import com.movtery.zalithlauncher.coroutine.buildPhase
 import com.movtery.zalithlauncher.game.version.export.platform.CurseForgePackExporter
 import com.movtery.zalithlauncher.game.version.export.platform.MCBBSPackExporter
 import com.movtery.zalithlauncher.game.version.export.platform.ModrinthPackExporter
-import com.movtery.zalithlauncher.game.version.export.platform.MultiMCPackExporter
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.ui.androidText
@@ -61,7 +60,6 @@ class PackExporter(
         PackType.MCBBS -> MCBBSPackExporter()
         PackType.Modrinth -> ModrinthPackExporter()
         PackType.CurseForge -> CurseForgePackExporter()
-        PackType.MultiMC -> MultiMCPackExporter()
     }
 
     /**
