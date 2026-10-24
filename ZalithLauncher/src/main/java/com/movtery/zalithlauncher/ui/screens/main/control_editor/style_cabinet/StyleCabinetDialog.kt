@@ -71,10 +71,10 @@ import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.InfoLayoutItem
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_joystick.JoystickStylePreview
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_joystick.resolveThemeConfig
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.orUnspecified
 import com.movtery.zalithlauncher.ui.screens.rememberSwapTween
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
-import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 
 /** 收藏柜的样式类型过滤 */
 private enum class CabinetFilter {
@@ -222,7 +222,10 @@ fun StyleCabinetDialog(
             pendingDelete?.let { item ->
                 SimpleAlertDialog(
                     title = stringResource(R.string.generic_delete),
-                    text = stringResource(R.string.control_editor_style_cabinet_delete, item.name),
+                    text = stringResource(
+                        R.string.control_editor_style_cabinet_delete,
+                        item.name.orUnspecified()
+                    ),
                     onConfirm = {
                         onDeleteItem(item)
                         pendingDelete = null
@@ -276,7 +279,7 @@ private fun CabinetStyleGridItem(
             Spacer(modifier = Modifier.height(4.dp))
             MarqueeText(
                 modifier = Modifier.fillMaxWidth(),
-                text = item.name.takeIf { it.isNotEmptyOrBlank() } ?: stringResource(R.string.generic_unspecified),
+                text = item.name.orUnspecified(),
                 textAlign = TextAlign.Center
             )
             //类型小标签
@@ -336,7 +339,7 @@ private fun CabinetStyleGridItem(
                 leadingIcon = {
                     Icon(
                         modifier = Modifier.size(20.dp),
-                        painter = painterResource(R.drawable.ic_add),
+                        painter = painterResource(R.drawable.ic_add_box_filled),
                         contentDescription = null
                     )
                 },

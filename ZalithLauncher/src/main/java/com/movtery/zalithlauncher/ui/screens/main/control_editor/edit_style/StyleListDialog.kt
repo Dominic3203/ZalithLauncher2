@@ -68,9 +68,9 @@ import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.InfoLayoutItem
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.InfoLayoutTextItem
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.orUnspecified
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
-import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 
 @Composable
 fun StyleListDialog(
@@ -215,7 +215,7 @@ private fun StyleItem(
             modifier = Modifier
                 .padding(vertical = 8.dp)
                 .weight(1f),
-            text = style.name.takeIf { it.isNotEmptyOrBlank() } ?: stringResource(R.string.generic_unspecified),
+            text = style.name.orUnspecified(),
             style = MaterialTheme.typography.bodyMedium
         )
         Box {
