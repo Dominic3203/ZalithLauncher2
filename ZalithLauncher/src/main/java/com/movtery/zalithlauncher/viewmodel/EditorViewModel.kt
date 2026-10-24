@@ -26,16 +26,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.movtery.layer_controller.data.ButtonStyle
 import com.movtery.layer_controller.data.HideLayerWhen
+import com.movtery.layer_controller.data.JoystickStyle
 import com.movtery.layer_controller.data.cloneNew
+import com.movtery.layer_controller.event.ClickEvent
 import com.movtery.layer_controller.layout.ControlLayout
+import com.movtery.layer_controller.layout.createNewLayer
 import com.movtery.layer_controller.observable.ObservableButtonStyle
+import com.movtery.layer_controller.observable.ObservableClickEventsProvider
 import com.movtery.layer_controller.observable.ObservableControlLayer
 import com.movtery.layer_controller.observable.ObservableControlLayout
 import com.movtery.layer_controller.observable.ObservableJoystickData
 import com.movtery.layer_controller.observable.ObservableJoystickStyle
 import com.movtery.layer_controller.observable.ObservableNormalData
 import com.movtery.layer_controller.observable.ObservableTextData
+import com.movtery.layer_controller.observable.ObservableTranslatableString
 import com.movtery.layer_controller.observable.ObservableWidget
 import com.movtery.layer_controller.observable.cloneJoystick
 import com.movtery.layer_controller.observable.cloneNormal
@@ -71,11 +77,6 @@ class EditorViewModel : ViewModel() {
     val styleCabinet = StyleCabinetState()
 
     /**
-     * 收藏柜是否从摇杆样式列表打开（关闭时返回来源列表）
-     */
-    var styleCabinetFromJoystick by mutableStateOf(false)
-
-    /**
      * 当前选中的控件层
      */
     var selectedLayer by mutableStateOf<ObservableControlLayer?>(null)
@@ -86,16 +87,6 @@ class EditorViewModel : ViewModel() {
     var selectedWidget by mutableStateOf<SelectedWidgetData?>(null)
 
     /**
-     * 当前选中的控件样式（仅用于样式编辑对话框）
-     */
-    var selectedStyle by mutableStateOf<ObservableButtonStyle?>(null)
-
-    /**
-     * 当前选中的摇杆样式（仅用于摇杆样式编辑对话框）
-     */
-    var selectedJoystickStyle by mutableStateOf<ObservableJoystickStyle?>(null)
-
-    /**
      * 编辑器菜单状态
      */
     var editorMenu by mutableStateOf(MenuState.HIDE)
@@ -104,19 +95,22 @@ class EditorViewModel : ViewModel() {
     var editorBallPosition by mutableStateOf(Offset.Zero)
 
     /**
-     * 编辑器各种操作项
+     * 编辑器各种操作项（主操作状态机）
      */
     var editorOperation by mutableStateOf<EditorOperation>(EditorOperation.None)
+        private set
 
     /**
-     * 编辑器对于控件的操作项
+     * 编辑器对于控件的操作项（控件操作状态机，可叠加于主操作之上）
      */
     var editorWidgetOperation by mutableStateOf<EditorWidgetOperation>(EditorWidgetOperation.None)
+        private set
 
     /**
-     * 编辑器的一些警告状态项
+     * 编辑器的一些警告状态项（警告状态机，独立弹出）
      */
     var editorWarningOperation by mutableStateOf<EditorWarningOperation>(EditorWarningOperation.None)
+        private set
 
     /**
      * 是否开启控件层聚焦模式
@@ -147,6 +141,99 @@ class EditorViewModel : ViewModel() {
     }
 
 
+
+    /**
+     * 在编辑画布上点击了一个控件
+     * 已选中时再次点击则打开控件编辑器
+     */
+    fun onWidgetTapped(data: ObservableWidget, layer: ObservableControlLayer) {
+        val current = selectedWidget?.data
+        selectedWidget = SelectedWidgetData(data, layer)
+        if (current == data) {
+            //选中后再点击一次，打开编辑菜单
+            editorOperation = EditorOperation.SelectButton
+        }
+    }
+
+    /**
+     * 打开当前选中控件的编辑器
+     */
+    fun openWidgetEditor() {
+        if (selectedWidget != null) {
+            editorOperation = EditorOperation.SelectButton
+        }
+    }
+
+    /**
+     * 新建一个控件层并进入它的属性编辑
+     */
+    fun createLayer(defaultLayerName: String) {
+        val newLayer = observableLayout.addLayer(
+            layer = createNewLayer(defaultLayerName = defaultLayerName)
+        )
+        editorOperation = EditorOperation.EditLayer(newLayer)
+    }
+
+    /**
+     * 编辑一个控件层的属性
+     */
+    fun editLayer(layer: ObservableControlLayer) {
+        editorOperation = EditorOperation.EditLayer(layer)
+    }
+
+    /**
+     * 复制一个控件层为新的控件层，并进入新层的属性编辑
+     */
+    fun copyLayer(layer: ObservableControlLayer, defaultLayerName: String) {
+        val baseLayer = layer.pack()
+        val newLayer = observableLayout.addLayer(
+            layer = createNewLayer(defaultLayerName = defaultLayerName).copy(
+                hide = baseLayer.hide,
+                hideWhenMouse = baseLayer.hideWhenMouse,
+                hideWhenGamepad = baseLayer.hideWhenGamepad,
+                visibilityType = baseLayer.visibilityType,
+                normalButtons = baseLayer.normalButtons,
+                textBoxes = baseLayer.textBoxes,
+                joystickButtons = baseLayer.joystickButtons
+            )
+        )
+        editorOperation = EditorOperation.EditLayer(newLayer)
+    }
+
+    /**
+     * 请求删除一个控件层，弹出对话框
+     */
+    fun requestDeleteLayer(layer: ObservableControlLayer) {
+        editorOperation = EditorOperation.DeleteLayer(layer)
+    }
+
+    /**
+     * 确认删除控件层，并清理关联的选中态
+     */
+    fun confirmDeleteLayer(layer: ObservableControlLayer) {
+        val isWidgetLayer = selectedWidget?.layer == layer
+        removeLayer(layer)
+        if (isWidgetLayer) {
+            selectedWidget = null
+        }
+        editorOperation = EditorOperation.None
+    }
+
+    /**
+     * 将一个控件层合并至下层
+     */
+    fun mergeLayerDownward(layer: ObservableControlLayer) {
+        observableLayout.mergeDownward(layer)
+    }
+
+    /**
+     * 控件层隐藏状态变化，必要时清理选中控件
+     */
+    fun onLayerHideChanged(hide: Boolean, layer: ObservableControlLayer) {
+        if (hide && selectedWidget?.layer == layer) {
+            selectedWidget = null
+        }
+    }
 
     /**
      * 切换编辑器菜单
@@ -188,31 +275,186 @@ class EditorViewModel : ViewModel() {
         }
     }
 
+
     /**
-     * 将控件复制到控件层
+     * 关闭当前主操作
      */
-    fun cloneWidgetToLayers(widget: ObservableWidget, layers: List<ObservableControlLayer>) {
-        when (widget) {
-            is ObservableNormalData -> {
-                layers.forEach { layer ->
-                    val newData = widget.cloneNormal()
-                    layer.addNormalButton(newData)
-                }
-            }
-            is ObservableTextData -> {
-                layers.forEach { layer ->
-                    val newData = widget.cloneText()
-                    layer.addTextBox(newData)
-                }
-            }
-            is ObservableJoystickData -> {
-                layers.forEach { layer ->
-                    val newData = widget.cloneJoystick()
-                    layer.addJoystickButton(newData)
-                }
-            }
-        }
+    fun dismissOperation() {
+        editorOperation = EditorOperation.None
     }
+
+    /**
+     * 打开控件外观列表
+     */
+    fun openStyleList() {
+        editorOperation = EditorOperation.OpenStyleList
+    }
+
+    /**
+     * 打开摇杆样式列表
+     */
+    fun openJoystickStyleList() {
+        editorOperation = EditorOperation.OpenJoystickStyleList
+    }
+
+    /**
+     * 开始创建控件外观，弹出对话框
+     */
+    fun startCreateStyle() {
+        editorOperation = EditorOperation.CreateStyle
+    }
+
+    /**
+     * 确认创建控件外观，回到控件外观列表
+     */
+    fun confirmCreateStyle(name: String) {
+        createNewStyle(name)
+        editorOperation = EditorOperation.OpenStyleList
+    }
+
+    /**
+     * 开始创建摇杆样式，弹出对话框
+     */
+    fun startCreateJoystickStyle() {
+        editorOperation = EditorOperation.CreateJoystickStyle
+    }
+
+    /**
+     * 确认创建摇杆样式，回到摇杆样式列表
+     */
+    fun confirmCreateJoystickStyle(name: String) {
+        createNewJoystickStyle(name)
+        editorOperation = EditorOperation.OpenJoystickStyleList
+    }
+
+    /**
+     * 编辑布局内的控件外观样式
+     */
+    fun editStyle(style: ObservableButtonStyle) {
+        editorOperation = EditorOperation.EditButtonStyle(style)
+    }
+
+    /**
+     * 编辑布局内的摇杆样式
+     */
+    fun editJoystickStyle(style: ObservableJoystickStyle) {
+        editorOperation = EditorOperation.EditJoystickStyle(style)
+    }
+
+    /**
+     * 打开删除控件外观样式对话框
+     */
+    fun requestDeleteStyle(style: ObservableButtonStyle) {
+        editorOperation = EditorOperation.DeleteButtonStyle(style)
+    }
+
+    /**
+     * 确认删除控件外观样式
+     */
+    fun confirmDeleteStyle(style: ObservableButtonStyle) {
+        removeStyle(style)
+        editorOperation = EditorOperation.None
+    }
+
+    /**
+     * 请求删除摇杆样式，弹出对话框
+     */
+    fun requestDeleteJoystickStyle(style: ObservableJoystickStyle) {
+        editorOperation = EditorOperation.DeleteJoystickStyle(style)
+    }
+
+    /**
+     * 确认删除摇杆样式
+     */
+    fun confirmDeleteJoystickStyle(style: ObservableJoystickStyle) {
+        removeJoystickStyle(style)
+        editorOperation = EditorOperation.None
+    }
+
+
+
+    /**
+     * 关闭当前控件操作
+     */
+    fun dismissWidgetOperation() {
+        editorWidgetOperation = EditorWidgetOperation.None
+    }
+
+    /**
+     * 请求复制一个控件，询问目标控制层
+     */
+    fun requestCloneWidget(data: ObservableWidget, layer: ObservableControlLayer) {
+        editorWidgetOperation = EditorWidgetOperation.CloneButton(data, layer)
+    }
+
+    /**
+     * 请求删除一个控件，弹出对话框
+     */
+    fun requestDeleteWidget(data: ObservableWidget, layer: ObservableControlLayer) {
+        editorWidgetOperation = EditorWidgetOperation.DeleteButton(data, layer)
+    }
+
+    /**
+     * 确认将控件复制到所选控制层
+     */
+    fun confirmCloneWidgets(widget: ObservableWidget, layers: List<ObservableControlLayer>) {
+        cloneWidgetToLayers(widget, layers)
+        editorWidgetOperation = EditorWidgetOperation.None
+    }
+
+    /**
+     * 确认删除控件
+     */
+    fun confirmDeleteWidget(widget: ObservableWidget, layer: ObservableControlLayer) {
+        removeWidget(layer, widget)
+        selectedWidget = null
+        editorOperation = EditorOperation.None
+        editorWidgetOperation = EditorWidgetOperation.None
+    }
+
+    /**
+     * 编辑控件的显示文本
+     */
+    fun editWidgetText(string: ObservableTranslatableString) {
+        editorWidgetOperation = EditorWidgetOperation.EditWidgetText(string)
+    }
+
+    /**
+     * 编辑切换控件层可见性事件
+     */
+    fun switchLayersVisibility(data: ObservableClickEventsProvider, type: ClickEvent.Type) {
+        editorWidgetOperation = EditorWidgetOperation.SwitchLayersVisibility(data, type)
+    }
+
+    /**
+     * 编辑控件发送的文本
+     */
+    fun sendText(data: ObservableClickEventsProvider) {
+        editorWidgetOperation = EditorWidgetOperation.SendText(data)
+    }
+
+    /**
+     * 确认控件发送的文本，应用事件变更
+     */
+    fun confirmSendText(data: ObservableClickEventsProvider, value: String) {
+        //清除所有发送文本事件，如果文本不为空则再添加
+        data.onRemoveAllEvents(ClickEvent.Type.SendText)
+        if (value.isNotEmpty()) {
+            data.onAddEvent(ClickEvent(ClickEvent.Type.SendText, value))
+        }
+        editorWidgetOperation = EditorWidgetOperation.None
+    }
+
+
+
+    /**
+     * 关闭当前警告
+     */
+    fun dismissWarning() {
+        editorWarningOperation = EditorWarningOperation.None
+    }
+
+
 
     /**
      * 创建一个新的控件外观
@@ -262,37 +504,73 @@ class EditorViewModel : ViewModel() {
 
     /**
      * 将控件外观样式收藏到样式收藏柜
-     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则同 uuid 覆盖
-     * @param onResult 收藏结果回调
+     * 已收藏同 uuid 样式时转入冲突处理
      */
-    fun favoriteButtonStyleToCabinet(
-        style: ObservableButtonStyle,
-        independent: Boolean = false,
-        onResult: (Boolean) -> Unit = {}
-    ) {
-        val data = if (independent) style.pack().cloneNew() else style.pack()
-        styleCabinet.favorite(data, onResult)
+    fun favoriteStyle(style: ObservableButtonStyle, onResult: (Boolean) -> Unit) {
+        if (styleCabinet.exists(isJoystick = false, uuid = style.uuid)) {
+            editorOperation = EditorOperation.FavoriteButtonStyleConflict(style)
+        } else {
+            performFavorite(style.pack(), independent = false, onResult)
+        }
     }
 
     /**
      * 将摇杆样式收藏到样式收藏柜
-     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则同 uuid 覆盖
-     * @param onResult 收藏结果回调
+     * 已收藏同 uuid 样式时转入冲突处理
      */
-    fun favoriteJoystickStyleToCabinet(
-        style: ObservableJoystickStyle,
-        independent: Boolean = false,
-        onResult: (Boolean) -> Unit = {}
+    fun favoriteJoystickStyle(style: ObservableJoystickStyle, onResult: (Boolean) -> Unit) {
+        if (styleCabinet.exists(isJoystick = true, uuid = style.uuid)) {
+            editorOperation = EditorOperation.FavoriteJoystickStyleConflict(style)
+        } else {
+            performFavorite(style.pack(), independent = false, onResult)
+        }
+    }
+
+    /**
+     * 处理收藏冲突
+     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则覆盖现有
+     */
+    fun resolveFavoriteConflict(
+        independent: Boolean,
+        onResult: (Boolean) -> Unit
     ) {
-        val data = if (independent) style.pack().cloneNew() else style.pack()
-        styleCabinet.favorite(data, onResult)
+        when (val operation = editorOperation) {
+            is EditorOperation.FavoriteButtonStyleConflict -> {
+                performFavorite(operation.style.pack(), independent, onResult)
+                editorOperation = EditorOperation.OpenStyleList
+            }
+            is EditorOperation.FavoriteJoystickStyleConflict -> {
+                performFavorite(operation.style.pack(), independent, onResult)
+                editorOperation = EditorOperation.OpenJoystickStyleList
+            }
+            else -> {}
+        }
+    }
+
+    /**
+     * 取消收藏冲突处理，直接回到来源的样式列表
+     */
+    fun cancelFavoriteConflict() {
+        when (editorOperation) {
+            is EditorOperation.FavoriteButtonStyleConflict -> editorOperation = EditorOperation.OpenStyleList
+            is EditorOperation.FavoriteJoystickStyleConflict -> editorOperation = EditorOperation.OpenJoystickStyleList
+            else -> {}
+        }
+    }
+
+    /**
+     * 打开样式收藏柜，[fromJoystick] 记录来源列表，关闭时返回来源
+     */
+    fun openStyleCabinet(fromJoystick: Boolean) {
+        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
     }
 
     /**
      * 关闭样式收藏柜，返回打开它的样式列表
      */
     fun closeStyleCabinet() {
-        editorOperation = if (styleCabinetFromJoystick) {
+        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
+        editorOperation = if (fromJoystick) {
             EditorOperation.OpenJoystickStyleList
         } else {
             EditorOperation.OpenStyleList
@@ -300,11 +578,21 @@ class EditorViewModel : ViewModel() {
     }
 
     /**
-     * 关闭柜内样式编辑器，返回样式收藏柜，并立即保存编辑结果
+     * 编辑收藏柜中的一个样式项
      */
-    fun closeCabinetEdit(item: CabinetStyleItem) {
-        styleCabinet.save(item)
-        editorOperation = EditorOperation.OpenStyleCabinet
+    fun editCabinetItem(item: CabinetStyleItem) {
+        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
+        editorOperation = when (item) {
+            is CabinetStyleItem.Button -> EditorOperation.EditCabinetButtonStyle(item, fromJoystick)
+            is CabinetStyleItem.Joystick -> EditorOperation.EditCabinetJoystickStyle(item, fromJoystick)
+        }
+    }
+
+    /**
+     * 删除一个收藏项
+     */
+    fun deleteCabinetItem(item: CabinetStyleItem) {
+        styleCabinet.delete(item)
     }
 
     /**
@@ -327,6 +615,77 @@ class EditorViewModel : ViewModel() {
                 } else {
                     observableLayout.addJoystickStyle(item.style.pack())
                     true
+                }
+            }
+        }
+    }
+
+    /**
+     * 关闭柜内样式编辑器，返回样式收藏柜
+     */
+    fun closeCabinetEdit(item: CabinetStyleItem, fromJoystick: Boolean) {
+        styleCabinet.save(item) // 立即保存编辑结果
+        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
+    }
+
+    /**
+     * 关闭控件外观样式编辑器，并按来源分派后续状态
+     */
+    fun closeButtonStyleEdit() {
+        when (val operation = editorOperation) {
+            is EditorOperation.EditCabinetButtonStyle -> {
+                closeCabinetEdit(operation.item, operation.fromJoystick)
+            }
+            is EditorOperation.EditButtonStyle -> {
+                editorOperation = EditorOperation.None
+            }
+            else -> {}
+        }
+    }
+
+    /**
+     * 关闭摇杆样式编辑器，并按来源分派后续状态
+     */
+    fun closeJoystickStyleEdit() {
+        when (val operation = editorOperation) {
+            is EditorOperation.EditCabinetJoystickStyle -> {
+                closeCabinetEdit(operation.item, operation.fromJoystick)
+            }
+            is EditorOperation.EditJoystickStyle -> {
+                editorOperation = EditorOperation.None
+            }
+            else -> {}
+        }
+    }
+
+    /**
+     * 保存柜内样式当前的编辑结果
+     */
+    fun saveCabinetItem(item: CabinetStyleItem) {
+        styleCabinet.save(item)
+    }
+
+    /**
+     * 将控件复制到控件层
+     */
+    fun cloneWidgetToLayers(widget: ObservableWidget, layers: List<ObservableControlLayer>) {
+        when (widget) {
+            is ObservableNormalData -> {
+                layers.forEach { layer ->
+                    val newData = widget.cloneNormal()
+                    layer.addNormalButton(newData)
+                }
+            }
+            is ObservableTextData -> {
+                layers.forEach { layer ->
+                    val newData = widget.cloneText()
+                    layer.addTextBox(newData)
+                }
+            }
+            is ObservableJoystickData -> {
+                layers.forEach { layer ->
+                    val newData = widget.cloneJoystick()
+                    layer.addJoystickButton(newData)
                 }
             }
         }
@@ -366,15 +725,15 @@ class EditorViewModel : ViewModel() {
         onExit: () -> Unit
     ) {
         //检查并退出控件对话框、编辑控件样式对话框
-        when (val operation = editorOperation) {
+        when (editorOperation) {
             is EditorOperation.SelectButton,
             is EditorOperation.EditButtonStyle,
             is EditorOperation.OpenStyleCabinet -> {
                 editorOperation = EditorOperation.None
             }
             //柜内样式编辑器，保存编辑结果并返回样式收藏柜
-            is EditorOperation.EditCabinetButtonStyle -> closeCabinetEdit(operation.item)
-            is EditorOperation.EditCabinetJoystickStyle -> closeCabinetEdit(operation.item)
+            is EditorOperation.EditCabinetButtonStyle -> closeButtonStyleEdit()
+            is EditorOperation.EditCabinetJoystickStyle -> closeJoystickStyleEdit()
             else -> {
                 showExitEditorDialog(
                     context = context,
@@ -428,5 +787,19 @@ class EditorViewModel : ViewModel() {
                 onExit()
             }
             .showThemed()
+    }
+
+    /**
+     * 执行一次样式收藏写入
+     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则同 uuid 覆盖
+     */
+    private fun performFavorite(style: ButtonStyle, independent: Boolean, onResult: (Boolean) -> Unit) {
+        val data = if (independent) style.cloneNew() else style
+        styleCabinet.favorite(data, onResult)
+    }
+
+    private fun performFavorite(style: JoystickStyle, independent: Boolean, onResult: (Boolean) -> Unit) {
+        val data = if (independent) style.cloneNew() else style
+        styleCabinet.favorite(data, onResult)
     }
 }

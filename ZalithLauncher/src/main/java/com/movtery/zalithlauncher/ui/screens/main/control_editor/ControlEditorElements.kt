@@ -62,18 +62,11 @@ import com.movtery.guide.guideNode
 import com.movtery.layer_controller.data.HideLayerWhen
 import com.movtery.layer_controller.data.JoystickTriggerMode
 import com.movtery.layer_controller.data.VisibilityType
-import com.movtery.layer_controller.event.ClickEvent
-import com.movtery.layer_controller.observable.ObservableButtonStyle
-import com.movtery.layer_controller.observable.ObservableClickEventsProvider
 import com.movtery.layer_controller.observable.ObservableControlLayer
-import com.movtery.layer_controller.observable.ObservableJoystickStyle
-import com.movtery.layer_controller.observable.ObservableTranslatableString
-import com.movtery.layer_controller.observable.ObservableWidget
 import com.movtery.layer_controller.utils.snap.SnapMode
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.bridge.CURSOR_DISABLED
 import com.movtery.zalithlauncher.bridge.CURSOR_ENABLED
-import com.movtery.zalithlauncher.game.control.CabinetStyleItem
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.components.DualMenuSubscreen
 import com.movtery.zalithlauncher.ui.components.FloatingBall
@@ -87,82 +80,9 @@ import com.movtery.zalithlauncher.ui.components.lazyScrollWithBar
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
+import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-
-/**
- * 控制布局编辑器操作状态
- */
-sealed interface EditorOperation {
-    data object None : EditorOperation
-    /** 选择了一个控件进行编辑 */
-    data object SelectButton : EditorOperation
-    /** 编辑控件层属性 */
-    data class EditLayer(val layer: ObservableControlLayer) : EditorOperation
-    /** 删除控件层 */
-    data class DeleteLayer(val layer: ObservableControlLayer) : EditorOperation
-    /** 打开控件外观列表 */
-    data object OpenStyleList : EditorOperation
-    /** 创建控件外观 */
-    data object CreateStyle : EditorOperation
-    /** 编辑控件外观 */
-    data object EditButtonStyle : EditorOperation
-    /** 删除控件外观 */
-    data class DeleteButtonStyle(val style: ObservableButtonStyle) : EditorOperation
-    /** 编辑摇杆样式 */
-    data object EditJoystickStyle : EditorOperation
-    /** 删除摇杆样式 */
-    data class DeleteJoystickStyle(val style: ObservableJoystickStyle) : EditorOperation
-    /** 打开摇杆样式列表 */
-    data object OpenJoystickStyleList : EditorOperation
-    /** 创建摇杆样式 */
-    data object CreateJoystickStyle : EditorOperation
-    /** 打开样式收藏柜 */
-    data object OpenStyleCabinet : EditorOperation
-    /** 收藏控件外观样式时，收藏柜中已存在同 uuid 样式 */
-    data class FavoriteButtonStyleConflict(val style: ObservableButtonStyle) : EditorOperation
-    /** 收藏摇杆样式时，收藏柜中已存在同 uuid 样式 */
-    data class FavoriteJoystickStyleConflict(val style: ObservableJoystickStyle) : EditorOperation
-    /** 编辑收藏柜中的控件外观样式 */
-    data class EditCabinetButtonStyle(val item: CabinetStyleItem.Button) : EditorOperation
-    /** 编辑收藏柜中的摇杆样式 */
-    data class EditCabinetJoystickStyle(val item: CabinetStyleItem.Joystick) : EditorOperation
-    /** 控制布局正在保存中 */
-    data object Saving : EditorOperation
-    /** 控制布局保存失败 */
-    data class SaveFailed(val error: Throwable) : EditorOperation
-}
-
-/**
- * 控制布局编辑器对控件的操作状态
- */
-sealed interface EditorWidgetOperation {
-    data object None : EditorWidgetOperation
-    /** 选择了一个控件, 并询问用户将其复制到哪些控制层 */
-    data class CloneButton(val data: ObservableWidget, val layer: ObservableControlLayer) : EditorWidgetOperation
-    /** 删除一个控件 */
-    data class DeleteButton(val data: ObservableWidget, val layer: ObservableControlLayer) : EditorWidgetOperation
-    /** 编辑控件的显示文本 */
-    data class EditWidgetText(val string: ObservableTranslatableString) : EditorWidgetOperation
-    /** 编辑切换控件层可见性事件 */
-    data class SwitchLayersVisibility(
-        val data: ObservableClickEventsProvider,
-        val type: ClickEvent.Type
-    ) : EditorWidgetOperation
-    /** 编辑发送的文本 */
-    data class SendText(val data: ObservableClickEventsProvider) : EditorWidgetOperation
-}
-
-/**
- * 控制布局编辑器的一些警告的操作状态
- */
-sealed interface EditorWarningOperation {
-    data object None : EditorWarningOperation
-    /** 没有控件层，提醒用户添加 */
-    data object WarningNoLayers : EditorWarningOperation
-    /** 没有选择控件层，提醒用户选择 */
-    data object WarningNoSelectLayer : EditorWarningOperation
-}
 
 /**
  * 预览控制布局的场景
@@ -193,6 +113,14 @@ fun JoystickTriggerMode.getTriggerModeText(): String {
         JoystickTriggerMode.TOUCH -> R.string.control_editor_edit_joystick_trigger_mode_touch
     }
     return stringResource(textRes)
+}
+
+/**
+ * 文本为空或全空白时，回退显示为“未指定”
+ */
+@Composable
+fun String.orUnspecified(): String {
+    return takeIf { it.isNotEmptyOrBlank() } ?: stringResource(R.string.generic_unspecified)
 }
 
 @Composable
@@ -815,7 +743,7 @@ private fun ControlLayerItem(
             }
             MarqueeText(
                 modifier = Modifier.weight(1f),
-                text = layer.name,
+                text = layer.name.orUnspecified(),
                 style = MaterialTheme.typography.bodyMedium
             )
             IconButton(
