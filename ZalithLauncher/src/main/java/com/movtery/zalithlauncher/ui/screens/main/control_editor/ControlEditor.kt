@@ -18,6 +18,7 @@
 
 package com.movtery.zalithlauncher.ui.screens.main.control_editor
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Row
@@ -30,13 +31,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -65,6 +69,7 @@ import com.movtery.layer_controller.observable.ObservableControlLayer
 import com.movtery.layer_controller.observable.ObservableJoystickStyle
 import com.movtery.layer_controller.observable.ObservableWidget
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.control.CabinetStyleItem
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.setting.enums.isLauncherInDarkTheme
 import com.movtery.zalithlauncher.ui.components.MenuState
@@ -83,9 +88,16 @@ import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_translatab
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.EditWidgetDialog
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectLayers
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectedWidgetData
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleCabinetDialog
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleFavoriteConflictDialog
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.EditorViewModel
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 控制布局编辑器主要UI，用于编辑控制布局
@@ -102,6 +114,18 @@ fun BoxWithConstraintsScope.ControlEditor(
     val layers by viewModel.observableLayout.layers.collectAsStateWithLifecycle()
     val styles by viewModel.observableLayout.styles.collectAsStateWithLifecycle()
     val joystickStyles by viewModel.observableLayout.joystickStyles.collectAsStateWithLifecycle()
+    val cabinetItems by viewModel.styleCabinet.items.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val editorToast: (Int) -> Unit = { resId ->
+        Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
+    }
+    val favoriteResultToast: (Boolean) -> Unit = { ok ->
+        editorToast(
+            if (ok) R.string.control_editor_style_cabinet_favorited
+            else R.string.control_manage_failed_to_save
+        )
+    }
 
     /** 默认新建的控件层的名称 */
     val defaultLayerName = stringResource(R.string.control_editor_edit_layer_default)
@@ -337,21 +361,112 @@ fun BoxWithConstraintsScope.ControlEditor(
         }
     )
 
+    val editingCabinetButton = viewModel.editorOperation as? EditorOperation.EditCabinetButtonStyle
+    val editingCabinetJoystick = viewModel.editorOperation as? EditorOperation.EditCabinetJoystickStyle
+
     EditButtonStyleDialog(
-        visible = viewModel.editorOperation == EditorOperation.EditButtonStyle,
-        style = viewModel.selectedStyle,
+        visible = viewModel.editorOperation == EditorOperation.EditButtonStyle || editingCabinetButton != null,
+        style = editingCabinetButton?.item?.style ?: viewModel.selectedStyle,
         onClose = {
-            viewModel.editorOperation = EditorOperation.None
+            if (editingCabinetButton != null) {
+                viewModel.closeCabinetEdit(editingCabinetButton.item)
+            } else {
+                viewModel.editorOperation = EditorOperation.None
+            }
         }
     )
 
     EditJoystickStyleDialog(
-        visible = viewModel.editorOperation == EditorOperation.EditJoystickStyle,
-        style = viewModel.selectedJoystickStyle,
+        visible = viewModel.editorOperation == EditorOperation.EditJoystickStyle || editingCabinetJoystick != null,
+        style = editingCabinetJoystick?.item?.style ?: viewModel.selectedJoystickStyle,
         onClose = {
-            viewModel.editorOperation = EditorOperation.None
+            if (editingCabinetJoystick != null) {
+                viewModel.closeCabinetEdit(editingCabinetJoystick.item)
+            } else {
+                viewModel.editorOperation = EditorOperation.None
+            }
         },
     )
+
+    //柜内样式编辑防抖保存，避免滑动条等高频修改触发频繁落盘
+    editingCabinetButton?.let { edit ->
+        CabinetEditSaveEffect(item = edit.item) {
+            viewModel.styleCabinet.save(edit.item)
+        }
+    }
+    editingCabinetJoystick?.let { edit ->
+        CabinetEditSaveEffect(item = edit.item) {
+            viewModel.styleCabinet.save(edit.item)
+        }
+    }
+
+    //样式收藏柜
+    StyleCabinetDialog(
+        visible = viewModel.editorOperation == EditorOperation.OpenStyleCabinet,
+        items = cabinetItems,
+        onClose = {
+            viewModel.closeStyleCabinet()
+        },
+        onEditItem = { item ->
+            when (item) {
+                is CabinetStyleItem.Button -> {
+                    viewModel.selectedStyle = item.style
+                    viewModel.editorOperation = EditorOperation.EditCabinetButtonStyle(item)
+                }
+                is CabinetStyleItem.Joystick -> {
+                    viewModel.selectedJoystickStyle = item.style
+                    viewModel.editorOperation = EditorOperation.EditCabinetJoystickStyle(item)
+                }
+            }
+        },
+        onAddToLayout = { item ->
+            if (viewModel.addCabinetStyleToLayout(item)) {
+                editorToast(R.string.control_editor_style_cabinet_added_to_layout)
+            } else {
+                editorToast(R.string.control_editor_style_cabinet_already_in_layout)
+            }
+        },
+        onDeleteItem = { item ->
+            viewModel.styleCabinet.delete(item)
+        }
+    )
+
+    //收藏样式冲突处理
+    when (val operation = viewModel.editorOperation) {
+        is EditorOperation.FavoriteButtonStyleConflict -> {
+            val style = operation.style
+            StyleFavoriteConflictDialog(
+                onOverwrite = {
+                    viewModel.favoriteButtonStyleToCabinet(style, onResult = favoriteResultToast)
+                    viewModel.editorOperation = EditorOperation.OpenStyleList
+                },
+                onIndependent = {
+                    viewModel.favoriteButtonStyleToCabinet(style, independent = true, onResult = favoriteResultToast)
+                    viewModel.editorOperation = EditorOperation.OpenStyleList
+                },
+                onCancel = {
+                    viewModel.editorOperation = EditorOperation.OpenStyleList
+                }
+            )
+        }
+        is EditorOperation.FavoriteJoystickStyleConflict -> {
+            val style = operation.style
+            StyleFavoriteConflictDialog(
+                onOverwrite = {
+                    viewModel.favoriteJoystickStyleToCabinet(style, onResult = favoriteResultToast)
+                    viewModel.editorOperation = EditorOperation.OpenJoystickStyleList
+                },
+                onIndependent = {
+                    viewModel.favoriteJoystickStyleToCabinet(style, independent = true, onResult = favoriteResultToast)
+                    viewModel.editorOperation = EditorOperation.OpenJoystickStyleList
+                },
+                onCancel = {
+                    viewModel.editorOperation = EditorOperation.OpenJoystickStyleList
+                }
+            )
+        }
+        else -> {}
+    }
 
     EditorOperation(
         operation = viewModel.editorOperation,
@@ -414,6 +529,28 @@ fun BoxWithConstraintsScope.ControlEditor(
         onCloneJoystickStyle = { style ->
             viewModel.cloneJoystickStyle(style)
         },
+        onFavoriteStyle = { style ->
+            if (viewModel.styleCabinet.exists(isJoystick = false, uuid = style.uuid)) {
+                viewModel.editorOperation = EditorOperation.FavoriteButtonStyleConflict(style)
+            } else {
+                viewModel.favoriteButtonStyleToCabinet(style, onResult = favoriteResultToast)
+            }
+        },
+        onOpenStyleCabinet = {
+            viewModel.styleCabinetFromJoystick = false
+            viewModel.editorOperation = EditorOperation.OpenStyleCabinet
+        },
+        onFavoriteJoystickStyle = { style ->
+            if (viewModel.styleCabinet.exists(isJoystick = true, uuid = style.uuid)) {
+                viewModel.editorOperation = EditorOperation.FavoriteJoystickStyleConflict(style)
+            } else {
+                viewModel.favoriteJoystickStyleToCabinet(style, onResult = favoriteResultToast)
+            }
+        },
+        onOpenJoystickStyleCabinet = {
+            viewModel.styleCabinetFromJoystick = true
+            viewModel.editorOperation = EditorOperation.OpenStyleCabinet
+        },
         styles = styles,
         joystickStyles = joystickStyles
     )
@@ -473,6 +610,27 @@ private fun ActionButton(
     }
 }
 
+/**
+ * 柜内样式编辑会话的防抖保存
+ */
+@OptIn(FlowPreview::class)
+@Composable
+private fun CabinetEditSaveEffect(
+    item: CabinetStyleItem,
+    save: () -> Unit
+) {
+    LaunchedEffect(item) {
+        snapshotFlow {
+            when (item) {
+                is CabinetStyleItem.Button -> item.style.pack()
+                is CabinetStyleItem.Joystick -> item.style.pack()
+            }
+        }.drop(1)
+            .debounce(500.milliseconds)
+            .collectLatest { save() }
+    }
+}
+
 @Composable
 private fun EditorOperation(
     operation: EditorOperation,
@@ -489,6 +647,10 @@ private fun EditorOperation(
     onCreateJoystickStyle: (name: String) -> Unit,
     onCloneJoystickStyle: (ObservableJoystickStyle) -> Unit,
     onDeleteJoystickStyle: (ObservableJoystickStyle) -> Unit,
+    onFavoriteStyle: (ObservableButtonStyle) -> Unit,
+    onOpenStyleCabinet: () -> Unit,
+    onFavoriteJoystickStyle: (ObservableJoystickStyle) -> Unit,
+    onOpenJoystickStyleCabinet: () -> Unit,
     styles: List<ObservableButtonStyle>,
     joystickStyles: List<ObservableJoystickStyle>
 ) {
@@ -496,7 +658,13 @@ private fun EditorOperation(
         is EditorOperation.None,
         is EditorOperation.SelectButton,
         is EditorOperation.EditButtonStyle,
-        is EditorOperation.EditJoystickStyle -> {}
+        is EditorOperation.EditJoystickStyle,
+        //收藏柜相关操作在 ControlEditor 顶层处理
+        is EditorOperation.OpenStyleCabinet,
+        is EditorOperation.FavoriteButtonStyleConflict,
+        is EditorOperation.FavoriteJoystickStyleConflict,
+        is EditorOperation.EditCabinetButtonStyle,
+        is EditorOperation.EditCabinetJoystickStyle -> {}
 
         is EditorOperation.EditLayer -> {
             val layer = operation.layer
@@ -546,6 +714,8 @@ private fun EditorOperation(
                 onDelete = { style ->
                     changeOperation(EditorOperation.DeleteButtonStyle(style))
                 },
+                onFavorite = onFavoriteStyle,
+                onOpenCabinet = onOpenStyleCabinet,
                 onClose = {
                     changeOperation(EditorOperation.None)
                 }
@@ -609,6 +779,8 @@ private fun EditorOperation(
                 onDelete = { style ->
                     changeOperation(EditorOperation.DeleteJoystickStyle(style))
                 },
+                onFavorite = onFavoriteJoystickStyle,
+                onOpenCabinet = onOpenJoystickStyleCabinet,
                 onClose = {
                     changeOperation(EditorOperation.None)
                 }

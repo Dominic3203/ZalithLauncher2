@@ -73,6 +73,7 @@ import com.movtery.layer_controller.utils.snap.SnapMode
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.bridge.CURSOR_DISABLED
 import com.movtery.zalithlauncher.bridge.CURSOR_ENABLED
+import com.movtery.zalithlauncher.game.control.CabinetStyleItem
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.components.DualMenuSubscreen
 import com.movtery.zalithlauncher.ui.components.FloatingBall
@@ -116,6 +117,16 @@ sealed interface EditorOperation {
     data object OpenJoystickStyleList : EditorOperation
     /** 创建摇杆样式 */
     data object CreateJoystickStyle : EditorOperation
+    /** 打开样式收藏柜 */
+    data object OpenStyleCabinet : EditorOperation
+    /** 收藏控件外观样式时，收藏柜中已存在同 uuid 样式 */
+    data class FavoriteButtonStyleConflict(val style: ObservableButtonStyle) : EditorOperation
+    /** 收藏摇杆样式时，收藏柜中已存在同 uuid 样式 */
+    data class FavoriteJoystickStyleConflict(val style: ObservableJoystickStyle) : EditorOperation
+    /** 编辑收藏柜中的控件外观样式 */
+    data class EditCabinetButtonStyle(val item: CabinetStyleItem.Button) : EditorOperation
+    /** 编辑收藏柜中的摇杆样式 */
+    data class EditCabinetJoystickStyle(val item: CabinetStyleItem.Joystick) : EditorOperation
     /** 控制布局正在保存中 */
     data object Saving : EditorOperation
     /** 控制布局保存失败 */

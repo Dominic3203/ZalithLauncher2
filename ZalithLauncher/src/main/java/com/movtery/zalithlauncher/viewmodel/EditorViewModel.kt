@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.movtery.layer_controller.data.HideLayerWhen
+import com.movtery.layer_controller.data.cloneNew
 import com.movtery.layer_controller.layout.ControlLayout
 import com.movtery.layer_controller.observable.ObservableButtonStyle
 import com.movtery.layer_controller.observable.ObservableControlLayer
@@ -41,6 +42,8 @@ import com.movtery.layer_controller.observable.cloneNormal
 import com.movtery.layer_controller.observable.cloneText
 import com.movtery.layer_controller.utils.saveToFile
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.control.CabinetStyleItem
+import com.movtery.zalithlauncher.game.control.StyleCabinetState
 import com.movtery.zalithlauncher.ui.components.MenuState
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.EditorOperation
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.EditorWarningOperation
@@ -61,6 +64,16 @@ import java.io.File
 class EditorViewModel : ViewModel() {
     lateinit var observableLayout: ObservableControlLayout
         private set
+
+    /**
+     * 样式收藏柜
+     */
+    val styleCabinet = StyleCabinetState()
+
+    /**
+     * 收藏柜是否从摇杆样式列表打开（关闭时返回来源列表）
+     */
+    var styleCabinetFromJoystick by mutableStateOf(false)
 
     /**
      * 当前选中的控件层
@@ -248,6 +261,78 @@ class EditorViewModel : ViewModel() {
     }
 
     /**
+     * 将控件外观样式收藏到样式收藏柜
+     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则同 uuid 覆盖
+     * @param onResult 收藏结果回调
+     */
+    fun favoriteButtonStyleToCabinet(
+        style: ObservableButtonStyle,
+        independent: Boolean = false,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        val data = if (independent) style.pack().cloneNew() else style.pack()
+        styleCabinet.favorite(data, onResult)
+    }
+
+    /**
+     * 将摇杆样式收藏到样式收藏柜
+     * @param independent 为 true 时生成新 uuid 作为独立收藏，否则同 uuid 覆盖
+     * @param onResult 收藏结果回调
+     */
+    fun favoriteJoystickStyleToCabinet(
+        style: ObservableJoystickStyle,
+        independent: Boolean = false,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        val data = if (independent) style.pack().cloneNew() else style.pack()
+        styleCabinet.favorite(data, onResult)
+    }
+
+    /**
+     * 关闭样式收藏柜，返回打开它的样式列表
+     */
+    fun closeStyleCabinet() {
+        editorOperation = if (styleCabinetFromJoystick) {
+            EditorOperation.OpenJoystickStyleList
+        } else {
+            EditorOperation.OpenStyleList
+        }
+    }
+
+    /**
+     * 关闭柜内样式编辑器，返回样式收藏柜，并立即保存编辑结果
+     */
+    fun closeCabinetEdit(item: CabinetStyleItem) {
+        styleCabinet.save(item)
+        editorOperation = EditorOperation.OpenStyleCabinet
+    }
+
+    /**
+     * 将柜内样式加入当前控制布局
+     * @return 是否加入成功，布局内已存在同 uuid 样式时返回 false
+     */
+    fun addCabinetStyleToLayout(item: CabinetStyleItem): Boolean {
+        return when (item) {
+            is CabinetStyleItem.Button -> {
+                if (observableLayout.styles.value.any { it.uuid == item.style.uuid }) {
+                    false
+                } else {
+                    observableLayout.addStyle(item.style.pack())
+                    true
+                }
+            }
+            is CabinetStyleItem.Joystick -> {
+                if (observableLayout.joystickStyles.value.any { it.uuid == item.style.uuid }) {
+                    false
+                } else {
+                    observableLayout.addJoystickStyle(item.style.pack())
+                    true
+                }
+            }
+        }
+    }
+
+    /**
      * 将编辑器内层级隐藏状态同步到实际隐藏状态
      * 供预览模式下使用正确的隐藏状态
      */
@@ -280,14 +365,22 @@ class EditorViewModel : ViewModel() {
         context: Context,
         onExit: () -> Unit
     ) {
-        //检查并退出编辑控件对话框、编辑控件样式对话框
-        if (editorOperation is EditorOperation.SelectButton || editorOperation is EditorOperation.EditButtonStyle) {
-            editorOperation = EditorOperation.None
-        } else {
-            showExitEditorDialog(
-                context = context,
-                onExit = onExit
-            )
+        //检查并退出控件对话框、编辑控件样式对话框
+        when (val operation = editorOperation) {
+            is EditorOperation.SelectButton,
+            is EditorOperation.EditButtonStyle,
+            is EditorOperation.OpenStyleCabinet -> {
+                editorOperation = EditorOperation.None
+            }
+            //柜内样式编辑器，保存编辑结果并返回样式收藏柜
+            is EditorOperation.EditCabinetButtonStyle -> closeCabinetEdit(operation.item)
+            is EditorOperation.EditCabinetJoystickStyle -> closeCabinetEdit(operation.item)
+            else -> {
+                showExitEditorDialog(
+                    context = context,
+                    onExit = onExit
+                )
+            }
         }
     }
 
