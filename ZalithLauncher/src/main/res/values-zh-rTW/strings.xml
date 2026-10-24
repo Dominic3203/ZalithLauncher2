@@ -1494,6 +1494,9 @@
     <string name="guide_editor_add_widgets_text">選取控制項圖層之後，你可以為其加入任意類型的控制項</string>
     <string name="guide_editor_styles_title">想調整控制項的外觀？</string>
     <string name="guide_editor_styles_text">你可以為控制項建立一些外觀，以便快速複用與切換不同的外觀</string>
+    <string name="guide_editor_style_cabinet_title">你也可以將喜歡的樣式加入通用的收藏櫃中！</string>
+    <string name="guide_editor_style_cabinet_text">樣式收藏櫃是全域性的，編輯任意控制佈局時，都可以看到這裡面的樣式哦～</string>
+    <string name="guide_editor_style_cabinet_note">在這裡，你可以將收藏的樣式加入到目前的控制佈局內使用～</string>
     <string name="guide_editor_preview">可以透過預覽功能來測試你的控制佈局</string>
     <string name="guide_editor_save">編輯完成後，記得儲存控制佈局！</string>
     <string name="guide_tip_blank">點擊空白處以進入下一步</string>

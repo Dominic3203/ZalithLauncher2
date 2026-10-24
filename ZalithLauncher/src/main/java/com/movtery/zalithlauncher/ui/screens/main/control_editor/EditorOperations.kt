@@ -27,6 +27,7 @@ import com.movtery.layer_controller.observable.ObservableTranslatableString
 import com.movtery.layer_controller.observable.ObservableWidget
 import com.movtery.zalithlauncher.game.control.CabinetStyleItem
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectedWidgetData
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.OpenCabinetSource
 import com.movtery.zalithlauncher.viewmodel.EditorViewModel
 
 /**
@@ -69,8 +70,8 @@ sealed interface EditorOperation {
     /** 创建摇杆样式对话框 */
     data object CreateJoystickStyle : EditorOperation
 
-    /** 打开样式收藏柜，[fromJoystick] 记录来源列表，关闭时返回来源 */
-    data class OpenStyleCabinet(val fromJoystick: Boolean) : EditorOperation
+    /** 打开样式收藏柜，[source] 记录来源 */
+    data class OpenStyleCabinet(val source: OpenCabinetSource) : EditorOperation
 
     /** 收藏控件外观样式时，收藏柜中已存在同 uuid 样式的处理方式对话框 */
     data class FavoriteButtonStyleConflict(val style: ObservableButtonStyle) : EditorOperation
@@ -78,28 +79,28 @@ sealed interface EditorOperation {
     /** 收藏摇杆样式时，收藏柜中已存在同 uuid 样式的处理方式对话框 */
     data class FavoriteJoystickStyleConflict(val style: ObservableJoystickStyle) : EditorOperation
 
-    /** 柜内控件外观样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框，[fromJoystick] 随收藏柜打开来源传递 */
+    /** 柜内控件外观样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框 */
     data class AddToLayoutButtonStyleConflict(
         val item: CabinetStyleItem.Button,
-        val fromJoystick: Boolean
+        val source: OpenCabinetSource
     ) : EditorOperation
 
-    /** 柜内摇杆样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框，[fromJoystick] 随收藏柜打开来源传递 */
+    /** 柜内摇杆样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框 */
     data class AddToLayoutJoystickStyleConflict(
         val item: CabinetStyleItem.Joystick,
-        val fromJoystick: Boolean
+        val source: OpenCabinetSource
     ) : EditorOperation
 
-    /** 编辑收藏柜中的控件外观样式，[fromJoystick] 随收藏柜打开来源传递 */
+    /** 编辑收藏柜中的控件外观样式 */
     data class EditCabinetButtonStyle(
         val item: CabinetStyleItem.Button,
-        val fromJoystick: Boolean
+        val source: OpenCabinetSource
     ) : EditorOperation
 
-    /** 编辑收藏柜中的摇杆样式，[fromJoystick] 随收藏柜打开来源传递 */
+    /** 编辑收藏柜中的摇杆样式 */
     data class EditCabinetJoystickStyle(
         val item: CabinetStyleItem.Joystick,
-        val fromJoystick: Boolean
+        val source: OpenCabinetSource
     ) : EditorOperation
 
     /** 控制布局正在保存中 */

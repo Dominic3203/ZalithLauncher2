@@ -176,6 +176,7 @@ fun EditorMenu(
     addNewJoystick: () -> Unit,
     openStyleList: () -> Unit,
     openJoystickStyleList: () -> Unit,
+    openStyleCabinet: () -> Unit,
     isLayerFocus: Boolean,
     onLayerFocusChanged: (Boolean) -> Unit,
     isPreviewMode: Boolean,
@@ -207,6 +208,7 @@ fun EditorMenu(
                 addNewJoystick = addNewJoystick,
                 openStyleList = openStyleList,
                 openJoystickStyleList = openJoystickStyleList,
+                openStyleCabinet = openStyleCabinet,
                 isPreviewMode = isPreviewMode,
                 onPreviewChanged = onPreviewChanged,
                 previewScenario = previewScenario,
@@ -271,6 +273,7 @@ private fun EditorMenuContent(
     addNewJoystick: () -> Unit,
     openStyleList: () -> Unit,
     openJoystickStyleList: () -> Unit,
+    openStyleCabinet: () -> Unit,
     isPreviewMode: Boolean,
     onPreviewChanged: (Boolean) -> Unit,
     previewScenario: PreviewScenario,
@@ -291,6 +294,7 @@ private fun EditorMenuContent(
                 when (key) {
                     GuideKeys.Editor.Step.CreateLayer -> "add_button"
                     GuideKeys.Editor.Step.AddStyles -> "joystick_style_list"
+                    GuideKeys.Editor.Step.StyleCabinet -> "style_cabinet"
                     GuideKeys.Editor.Step.Preview -> "using_gamepad"
                     GuideKeys.Editor.Step.Save -> "save_and_exit"
                     else -> null
@@ -352,6 +356,10 @@ private fun EditorMenuContent(
             )
         }
 
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         //控件外观列表
         item(key = "control_appearance_list") {
             MenuTextButton(
@@ -385,6 +393,26 @@ private fun EditorMenuContent(
                 enabled = isPreviewMode.not(),
                 onClick = {
                     openJoystickStyleList()
+                    closeScreen()
+                },
+                color = color,
+                contentColor = contentColor,
+            )
+        }
+
+        // 样式收藏柜
+        item(key = "style_cabinet") {
+            MenuTextButton(
+                modifier = Modifier
+                    .guideNode(
+                        key = GuideKeys.Editor.Step.StyleCabinet,
+                        holeRadius = 16.dp
+                    )
+                    .fillMaxWidth(),
+                text = stringResource(R.string.control_editor_style_cabinet),
+                enabled = isPreviewMode.not(),
+                onClick = {
+                    openStyleCabinet()
                     closeScreen()
                 },
                 color = color,

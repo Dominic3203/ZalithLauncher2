@@ -56,6 +56,7 @@ import com.movtery.zalithlauncher.ui.screens.main.control_editor.EditorWarningOp
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.EditorWidgetOperation
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.PreviewScenario
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectedWidgetData
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.OpenCabinetSource
 import com.movtery.zalithlauncher.ui.theme.showThemed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -559,32 +560,34 @@ class EditorViewModel : ViewModel() {
     }
 
     /**
-     * 打开样式收藏柜，[fromJoystick] 记录来源列表，关闭时返回来源
+     * 打开样式收藏柜
+     * @param source 来源
      */
-    fun openStyleCabinet(fromJoystick: Boolean) {
-        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
+    fun openStyleCabinet(source: OpenCabinetSource) {
+        editorOperation = EditorOperation.OpenStyleCabinet(source)
     }
 
     /**
      * 关闭样式收藏柜，返回打开它的样式列表
      */
     fun closeStyleCabinet() {
-        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
-        editorOperation = if (fromJoystick) {
-            EditorOperation.OpenJoystickStyleList
-        } else {
-            EditorOperation.OpenStyleList
+        val source = (editorOperation as? EditorOperation.OpenStyleCabinet)?.source
+        val back = when (source) {
+            OpenCabinetSource.ControlStyle -> EditorOperation.OpenStyleList
+            OpenCabinetSource.JoystickStyle -> EditorOperation.OpenJoystickStyleList
+            else -> EditorOperation.None
         }
+        editorOperation = back
     }
 
     /**
      * 编辑收藏柜中的一个样式项
      */
     fun editCabinetItem(item: CabinetStyleItem) {
-        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
+        val source = (editorOperation as? EditorOperation.OpenStyleCabinet)?.source ?: OpenCabinetSource.Menu
         editorOperation = when (item) {
-            is CabinetStyleItem.Button -> EditorOperation.EditCabinetButtonStyle(item, fromJoystick)
-            is CabinetStyleItem.Joystick -> EditorOperation.EditCabinetJoystickStyle(item, fromJoystick)
+            is CabinetStyleItem.Button -> EditorOperation.EditCabinetButtonStyle(item, source)
+            is CabinetStyleItem.Joystick -> EditorOperation.EditCabinetJoystickStyle(item, source)
         }
     }
 
@@ -601,11 +604,11 @@ class EditorViewModel : ViewModel() {
      * @param onAdded 成功加入后的回调
      */
     fun addCabinetStyleToLayout(item: CabinetStyleItem, onAdded: () -> Unit) {
-        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
+        val source = (editorOperation as? EditorOperation.OpenStyleCabinet)?.source ?: OpenCabinetSource.Menu
         when (item) {
             is CabinetStyleItem.Button -> {
                 if (observableLayout.styles.value.any { it.uuid == item.style.uuid }) {
-                    editorOperation = EditorOperation.AddToLayoutButtonStyleConflict(item, fromJoystick)
+                    editorOperation = EditorOperation.AddToLayoutButtonStyleConflict(item, source)
                 } else {
                     observableLayout.addStyle(item.style.pack())
                     onAdded()
@@ -613,7 +616,7 @@ class EditorViewModel : ViewModel() {
             }
             is CabinetStyleItem.Joystick -> {
                 if (observableLayout.joystickStyles.value.any { it.uuid == item.style.uuid }) {
-                    editorOperation = EditorOperation.AddToLayoutJoystickStyleConflict(item, fromJoystick)
+                    editorOperation = EditorOperation.AddToLayoutJoystickStyleConflict(item, source)
                 } else {
                     observableLayout.addJoystickStyle(item.style.pack())
                     onAdded()
@@ -635,7 +638,7 @@ class EditorViewModel : ViewModel() {
                 } else {
                     observableLayout.addStyle(operation.item.style.pack().cloneNew())
                 }
-                editorOperation = EditorOperation.OpenStyleCabinet(operation.fromJoystick)
+                editorOperation = EditorOperation.OpenStyleCabinet(operation.source)
             }
             is EditorOperation.AddToLayoutJoystickStyleConflict -> {
                 if (overwrite) {
@@ -643,7 +646,7 @@ class EditorViewModel : ViewModel() {
                 } else {
                     observableLayout.addJoystickStyle(operation.item.style.pack().cloneNew())
                 }
-                editorOperation = EditorOperation.OpenStyleCabinet(operation.fromJoystick)
+                editorOperation = EditorOperation.OpenStyleCabinet(operation.source)
             }
             else -> {}
         }
@@ -653,20 +656,20 @@ class EditorViewModel : ViewModel() {
      * 取消加入布局冲突处理，直接回到样式收藏柜
      */
     fun cancelAddToLayoutConflict() {
-        val fromJoystick = when (val operation = editorOperation) {
-            is EditorOperation.AddToLayoutButtonStyleConflict -> operation.fromJoystick
-            is EditorOperation.AddToLayoutJoystickStyleConflict -> operation.fromJoystick
+        val source = when (val operation = editorOperation) {
+            is EditorOperation.AddToLayoutButtonStyleConflict -> operation.source
+            is EditorOperation.AddToLayoutJoystickStyleConflict -> operation.source
             else -> return
         }
-        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
+        editorOperation = EditorOperation.OpenStyleCabinet(source)
     }
 
     /**
      * 关闭柜内样式编辑器，返回样式收藏柜
      */
-    fun closeCabinetEdit(item: CabinetStyleItem, fromJoystick: Boolean) {
+    fun closeCabinetEdit(item: CabinetStyleItem, source: OpenCabinetSource) {
         styleCabinet.save(item) // 立即保存编辑结果
-        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
+        editorOperation = EditorOperation.OpenStyleCabinet(source)
     }
 
     /**
@@ -675,7 +678,7 @@ class EditorViewModel : ViewModel() {
     fun closeButtonStyleEdit() {
         when (val operation = editorOperation) {
             is EditorOperation.EditCabinetButtonStyle -> {
-                closeCabinetEdit(operation.item, operation.fromJoystick)
+                closeCabinetEdit(operation.item, operation.source)
             }
             is EditorOperation.EditButtonStyle -> {
                 editorOperation = EditorOperation.None
@@ -690,7 +693,7 @@ class EditorViewModel : ViewModel() {
     fun closeJoystickStyleEdit() {
         when (val operation = editorOperation) {
             is EditorOperation.EditCabinetJoystickStyle -> {
-                closeCabinetEdit(operation.item, operation.fromJoystick)
+                closeCabinetEdit(operation.item, operation.source)
             }
             is EditorOperation.EditJoystickStyle -> {
                 editorOperation = EditorOperation.None

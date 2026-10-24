@@ -1503,6 +1503,9 @@
     <string name="guide_editor_add_widgets_text">选中控件层之后，你可以为其添加任意类型的控件~</string>
     <string name="guide_editor_styles_title">想调整控件的外观？</string>
     <string name="guide_editor_styles_text">你可以为控件们创建一些外观，以便于快速复用、切换不同的外观</string>
+    <string name="guide_editor_style_cabinet_title">你也可以将喜欢的样式添加到通用的收藏柜中！</string>
+    <string name="guide_editor_style_cabinet_text">样式收藏柜是全局性的，编辑任意控制布局时，都可以看到这里面的样式哦~</string>
+    <string name="guide_editor_style_cabinet_note">在这里，你可以将收藏的样式加入到当前的控制布局内使用~</string>
     <string name="guide_editor_preview">可通过预览功能来测试你的控制布局哦~</string>
     <string name="guide_editor_save">完成编辑后，记得保存控制布局！</string>
     <string name="guide_tip_blank">点击空白处进入下一步</string>

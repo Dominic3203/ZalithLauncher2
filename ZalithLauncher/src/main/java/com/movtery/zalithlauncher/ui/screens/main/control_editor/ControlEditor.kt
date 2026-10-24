@@ -62,6 +62,7 @@ import com.movtery.zalithlauncher.ui.components.MenuState
 import com.movtery.zalithlauncher.ui.components.rememberBoxSize
 import com.movtery.zalithlauncher.ui.guide.GuideKeys
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.EditWidgetDialog
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.OpenCabinetSource
 import com.movtery.zalithlauncher.viewmodel.EditorViewModel
 import java.io.File
 
@@ -222,6 +223,9 @@ fun BoxWithConstraintsScope.ControlEditor(
         },
         openStyleList = viewModel::openStyleList,
         openJoystickStyleList = viewModel::openJoystickStyleList,
+        openStyleCabinet = {
+            viewModel.openStyleCabinet(OpenCabinetSource.Menu)
+        },
         isLayerFocus = viewModel.isLayerFocus,
         onLayerFocusChanged = { viewModel.isLayerFocus = it },
         isPreviewMode = viewModel.isPreviewMode,

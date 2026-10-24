@@ -1546,6 +1546,9 @@
     <string name="guide_editor_styles_title">Want to change how your controls look?</string>
     <!-- Body explaining control appearances, which can be created once and reused across controls -->
     <string name="guide_editor_styles_text">You can create appearances for your controls so they can be quickly reused and switched between</string>
+    <string name="guide_editor_style_cabinet_title">You can also add your favorite styles to the shared style cabinet!</string>
+    <string name="guide_editor_style_cabinet_text">The style cabinet is global: no matter which control layout you are editing, the styles inside are always there~</string>
+    <string name="guide_editor_style_cabinet_note">From here, you can add the favorited styles to the current control layout for use~</string>
     <!-- Guide card for the preview option in the editor menu; preview mode lets the user test the control layout -->
     <string name="guide_editor_preview">Use the preview mode to test out your control layout</string>
     <!-- Final guide card reminding the user to save the control layout -->

@@ -48,6 +48,7 @@ import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_style.Edit
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_style.StyleListDialog
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_translatable.EditTranslatableTextDialog
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectLayers
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.OpenCabinetSource
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleCabinetDialog
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleConflictDialog
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
@@ -182,7 +183,7 @@ private fun EditorOperationDialogs(
                     viewModel.favoriteStyle(style, onResult = favoriteResultToast)
                 },
                 onOpenCabinet = {
-                    viewModel.openStyleCabinet(fromJoystick = false)
+                    viewModel.openStyleCabinet(OpenCabinetSource.ControlStyle)
                 },
                 onClose = viewModel::dismissOperation
             )
@@ -240,7 +241,7 @@ private fun EditorOperationDialogs(
                     viewModel.favoriteJoystickStyle(style, onResult = favoriteResultToast)
                 },
                 onOpenCabinet = {
-                    viewModel.openStyleCabinet(fromJoystick = true)
+                    viewModel.openStyleCabinet(OpenCabinetSource.JoystickStyle)
                 },
                 onClose = viewModel::dismissOperation
             )
