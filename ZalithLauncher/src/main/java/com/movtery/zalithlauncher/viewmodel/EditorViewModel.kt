@@ -597,27 +597,68 @@ class EditorViewModel : ViewModel() {
 
     /**
      * 将柜内样式加入当前控制布局
-     * @return 是否加入成功，布局内已存在同 uuid 样式时返回 false
+     * 布局内已存在同 uuid 样式时转入冲突处理对话框
+     * @param onAdded 成功加入后的回调
      */
-    fun addCabinetStyleToLayout(item: CabinetStyleItem): Boolean {
-        return when (item) {
+    fun addCabinetStyleToLayout(item: CabinetStyleItem, onAdded: () -> Unit) {
+        val fromJoystick = (editorOperation as? EditorOperation.OpenStyleCabinet)?.fromJoystick == true
+        when (item) {
             is CabinetStyleItem.Button -> {
                 if (observableLayout.styles.value.any { it.uuid == item.style.uuid }) {
-                    false
+                    editorOperation = EditorOperation.AddToLayoutButtonStyleConflict(item, fromJoystick)
                 } else {
                     observableLayout.addStyle(item.style.pack())
-                    true
+                    onAdded()
                 }
             }
             is CabinetStyleItem.Joystick -> {
                 if (observableLayout.joystickStyles.value.any { it.uuid == item.style.uuid }) {
-                    false
+                    editorOperation = EditorOperation.AddToLayoutJoystickStyleConflict(item, fromJoystick)
                 } else {
                     observableLayout.addJoystickStyle(item.style.pack())
-                    true
+                    onAdded()
                 }
             }
         }
+    }
+
+    /**
+     * 处理加入布局冲突
+     * @param overwrite 为 true 时以柜内样式覆盖布局内同 uuid 样式，
+     *                  为 false 时创建新的样式
+     */
+    fun resolveAddToLayoutConflict(overwrite: Boolean) {
+        when (val operation = editorOperation) {
+            is EditorOperation.AddToLayoutButtonStyleConflict -> {
+                if (overwrite) {
+                    observableLayout.replaceStyle(operation.item.style.pack())
+                } else {
+                    observableLayout.addStyle(operation.item.style.pack().cloneNew())
+                }
+                editorOperation = EditorOperation.OpenStyleCabinet(operation.fromJoystick)
+            }
+            is EditorOperation.AddToLayoutJoystickStyleConflict -> {
+                if (overwrite) {
+                    observableLayout.replaceJoystickStyle(operation.item.style.pack())
+                } else {
+                    observableLayout.addJoystickStyle(operation.item.style.pack().cloneNew())
+                }
+                editorOperation = EditorOperation.OpenStyleCabinet(operation.fromJoystick)
+            }
+            else -> {}
+        }
+    }
+
+    /**
+     * 取消加入布局冲突处理，直接回到样式收藏柜
+     */
+    fun cancelAddToLayoutConflict() {
+        val fromJoystick = when (val operation = editorOperation) {
+            is EditorOperation.AddToLayoutButtonStyleConflict -> operation.fromJoystick
+            is EditorOperation.AddToLayoutJoystickStyleConflict -> operation.fromJoystick
+            else -> return
+        }
+        editorOperation = EditorOperation.OpenStyleCabinet(fromJoystick)
     }
 
     /**

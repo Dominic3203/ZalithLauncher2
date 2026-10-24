@@ -1270,7 +1270,9 @@
     <string name="control_editor_style_cabinet_favorited">已收藏该样式</string>
     <string name="control_editor_style_cabinet_add_to_layout">加入当前控制布局</string>
     <string name="control_editor_style_cabinet_added_to_layout">已加入当前控制布局</string>
-    <string name="control_editor_style_cabinet_already_in_layout">当前控制布局已存在该样式</string>
+    <string name="control_editor_style_cabinet_add_conflict_title">样式已存在</string>
+    <string name="control_editor_style_cabinet_add_conflict_message">当前控制布局中已存在相同 ID 的样式</string>
+    <string name="control_editor_style_cabinet_add_conflict_independent">独立加入</string>
     <string name="control_editor_style_cabinet_conflict_title">样式已收藏</string>
     <string name="control_editor_style_cabinet_conflict_message">收藏柜中已存在相同 ID 的样式</string>
     <string name="control_editor_style_cabinet_conflict_overwrite">覆盖现有</string>

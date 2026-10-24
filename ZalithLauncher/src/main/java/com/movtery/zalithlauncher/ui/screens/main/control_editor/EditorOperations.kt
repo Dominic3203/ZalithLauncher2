@@ -78,6 +78,18 @@ sealed interface EditorOperation {
     /** 收藏摇杆样式时，收藏柜中已存在同 uuid 样式的处理方式对话框 */
     data class FavoriteJoystickStyleConflict(val style: ObservableJoystickStyle) : EditorOperation
 
+    /** 柜内控件外观样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框，[fromJoystick] 随收藏柜打开来源传递 */
+    data class AddToLayoutButtonStyleConflict(
+        val item: CabinetStyleItem.Button,
+        val fromJoystick: Boolean
+    ) : EditorOperation
+
+    /** 柜内摇杆样式加入布局时，布局中已存在同 uuid 样式的处理方式对话框，[fromJoystick] 随收藏柜打开来源传递 */
+    data class AddToLayoutJoystickStyleConflict(
+        val item: CabinetStyleItem.Joystick,
+        val fromJoystick: Boolean
+    ) : EditorOperation
+
     /** 编辑收藏柜中的控件外观样式，[fromJoystick] 随收藏柜打开来源传递 */
     data class EditCabinetButtonStyle(
         val item: CabinetStyleItem.Button,

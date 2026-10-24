@@ -67,6 +67,7 @@ import com.movtery.zalithlauncher.setting.enums.isLauncherInDarkTheme
 import com.movtery.zalithlauncher.ui.components.CheckChip
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
+import com.movtery.zalithlauncher.ui.components.WarningCard
 import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.InfoLayoutItem
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_joystick.JoystickStylePreview
@@ -203,16 +204,25 @@ fun StyleCabinetDialog(
                                 }
                             }
                         } else {
-                            Box(
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.control_editor_style_cabinet_empty),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
+                            WarningCard(
+                                modifier = Modifier
+                                    .padding(top = 8.dp, bottom = 16.dp)
+                                    .padding(horizontal = 16.dp),
+                                title = stringResource(R.string.generic_tip),
+                                icon = { innerModifier ->
+                                    Icon(
+                                        modifier = innerModifier,
+                                        painter = painterResource(R.drawable.ic_lightbulb),
+                                        contentDescription = null
+                                    )
+                                },
+                                text = {
+                                    Text(
+                                        text = stringResource(R.string.control_editor_style_cabinet_empty),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            )
                         }
                     }
                 }

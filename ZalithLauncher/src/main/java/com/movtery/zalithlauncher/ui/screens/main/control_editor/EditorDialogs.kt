@@ -49,7 +49,7 @@ import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_style.Styl
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_translatable.EditTranslatableTextDialog
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.edit_widget.SelectLayers
 import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleCabinetDialog
-import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleFavoriteConflictDialog
+import com.movtery.zalithlauncher.ui.screens.main.control_editor.style_cabinet.StyleConflictDialog
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.EditorViewModel
 import kotlinx.coroutines.FlowPreview
@@ -87,7 +87,8 @@ fun EditorDialogHost(viewModel: EditorViewModel) {
         viewModel = viewModel,
         styles = styles,
         joystickStyles = joystickStyles,
-        favoriteResultToast = favoriteResultToast
+        favoriteResultToast = favoriteResultToast,
+        editorToast = editorToast
     )
 
     EditorWidgetOperationDialogs(
@@ -106,10 +107,8 @@ fun EditorDialogHost(viewModel: EditorViewModel) {
         onClose = viewModel::closeStyleCabinet,
         onEditItem = viewModel::editCabinetItem,
         onAddToLayout = { item ->
-            if (viewModel.addCabinetStyleToLayout(item)) {
+            viewModel.addCabinetStyleToLayout(item) {
                 editorToast(R.string.control_editor_style_cabinet_added_to_layout)
-            } else {
-                editorToast(R.string.control_editor_style_cabinet_already_in_layout)
             }
         },
         onDeleteItem = viewModel::deleteCabinetItem
@@ -124,7 +123,8 @@ private fun EditorOperationDialogs(
     viewModel: EditorViewModel,
     styles: List<ObservableButtonStyle>,
     joystickStyles: List<ObservableJoystickStyle>,
-    favoriteResultToast: (Boolean) -> Unit
+    favoriteResultToast: (Boolean) -> Unit,
+    editorToast: (Int) -> Unit
 ) {
     /** 复制控件层时新层的默认名称 */
     val defaultLayerName = stringResource(R.string.control_editor_edit_layer_default)
@@ -260,14 +260,36 @@ private fun EditorOperationDialogs(
         }
         is EditorOperation.FavoriteButtonStyleConflict,
         is EditorOperation.FavoriteJoystickStyleConflict -> {
-            StyleFavoriteConflictDialog(
-                onOverwrite = {
+            StyleConflictDialog(
+                title = stringResource(R.string.control_editor_style_cabinet_conflict_title),
+                message = stringResource(R.string.control_editor_style_cabinet_conflict_message),
+                primaryText = stringResource(R.string.control_editor_style_cabinet_conflict_overwrite),
+                secondaryText = stringResource(R.string.control_editor_style_cabinet_conflict_independent),
+                onPrimary = {
                     viewModel.resolveFavoriteConflict(independent = false, onResult = favoriteResultToast)
                 },
-                onIndependent = {
+                onSecondary = {
                     viewModel.resolveFavoriteConflict(independent = true, onResult = favoriteResultToast)
                 },
                 onCancel = viewModel::cancelFavoriteConflict
+            )
+        }
+        is EditorOperation.AddToLayoutButtonStyleConflict,
+        is EditorOperation.AddToLayoutJoystickStyleConflict -> {
+            StyleConflictDialog(
+                title = stringResource(R.string.control_editor_style_cabinet_add_conflict_title),
+                message = stringResource(R.string.control_editor_style_cabinet_add_conflict_message),
+                primaryText = stringResource(R.string.control_editor_style_cabinet_conflict_overwrite),
+                secondaryText = stringResource(R.string.control_editor_style_cabinet_add_conflict_independent),
+                onPrimary = {
+                    viewModel.resolveAddToLayoutConflict(overwrite = true)
+                    editorToast(R.string.control_editor_style_cabinet_added_to_layout)
+                },
+                onSecondary = {
+                    viewModel.resolveAddToLayoutConflict(overwrite = false)
+                    editorToast(R.string.control_editor_style_cabinet_added_to_layout)
+                },
+                onCancel = viewModel::cancelAddToLayoutConflict
             )
         }
         is EditorOperation.Saving -> {

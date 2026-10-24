@@ -1263,7 +1263,9 @@
     <string name="control_editor_style_cabinet_favorited">Style favorited</string>
     <string name="control_editor_style_cabinet_add_to_layout">Add to Current Control Layout</string>
     <string name="control_editor_style_cabinet_added_to_layout">Added to the current control layout</string>
-    <string name="control_editor_style_cabinet_already_in_layout">This style already exists in the current control layout</string>
+    <string name="control_editor_style_cabinet_add_conflict_title">Style Already Exists</string>
+    <string name="control_editor_style_cabinet_add_conflict_message">A style with the same ID already exists in the current control layout</string>
+    <string name="control_editor_style_cabinet_add_conflict_independent">Add as Copy</string>
     <string name="control_editor_style_cabinet_conflict_title">Style Already Favorited</string>
     <string name="control_editor_style_cabinet_conflict_message">A style with the same ID is already in the style cabinet</string>
     <string name="control_editor_style_cabinet_conflict_overwrite">Overwrite Existing</string>
