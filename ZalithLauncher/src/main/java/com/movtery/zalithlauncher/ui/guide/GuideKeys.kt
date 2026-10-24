@@ -46,7 +46,7 @@ sealed interface GuideKeys : GuideKey {
 
     /** 控制布局编辑器的引导 */
     data object Editor : Keys {
-        override val version = 1
+        override val version = 2
 
         sealed interface Step : GuideKey {
             /** 悬浮菜单 */
