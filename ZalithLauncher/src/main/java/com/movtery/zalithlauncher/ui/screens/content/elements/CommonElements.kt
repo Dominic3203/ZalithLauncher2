@@ -451,7 +451,7 @@ private fun TaskFlowListColumn(
                 .weight(1f, fill = false),
             state = scrollState
         ) {
-            items(tasks) { task ->
+            items(tasks, key = { it.task.id }) { task ->
                 InstallingTaskItem(
                     modifier = Modifier
                         .fillMaxWidth()
