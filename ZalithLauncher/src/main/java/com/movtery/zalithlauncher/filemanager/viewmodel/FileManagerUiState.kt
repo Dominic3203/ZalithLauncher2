@@ -23,7 +23,6 @@ import com.movtery.zalithlauncher.filemanager.logic.entry.FmListResult
 import com.movtery.zalithlauncher.filemanager.logic.ops.ConflictResolution
 import com.movtery.zalithlauncher.filemanager.logic.ops.DirStats
 import com.movtery.zalithlauncher.filemanager.logic.ops.PasteRequest
-import com.movtery.zalithlauncher.filemanager.logic.task.TaskProgress
 import com.movtery.zalithlauncher.filemanager.logic.task.TaskState
 import com.movtery.zalithlauncher.filemanager.logic.trash.TrashItem
 import com.movtery.zalithlauncher.ui.code_editor.EditorState
@@ -89,7 +88,6 @@ data class FileManagerUiState(
     val showHidden: Boolean = false,
     val trashSortConfig: TrashSortConfig = TrashSortConfig(),
     val taskState: TaskState = TaskState.Idle,
-    val taskProgress: TaskProgress? = null,
     val trashView: TrashViewState = TrashViewState.Idle,
     val snackbar: FmSnackbar? = null,
     val locateHighlightPath: Path? = null,

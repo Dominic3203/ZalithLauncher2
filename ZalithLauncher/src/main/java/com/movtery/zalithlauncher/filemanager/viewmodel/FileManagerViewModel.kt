@@ -31,6 +31,7 @@ import com.movtery.zalithlauncher.filemanager.logic.compress.CompressOptions
 import com.movtery.zalithlauncher.filemanager.logic.entry.FmEntry
 import com.movtery.zalithlauncher.filemanager.logic.ops.ConflictResolution
 import com.movtery.zalithlauncher.filemanager.logic.task.TaskManager
+import com.movtery.zalithlauncher.filemanager.logic.task.TaskProgress
 import com.movtery.zalithlauncher.filemanager.logic.task.TaskState
 import com.movtery.zalithlauncher.filemanager.logic.trash.TrashItem
 import com.movtery.zalithlauncher.filemanager.os.FmLog
@@ -115,6 +116,10 @@ class FileManagerViewModel @Inject constructor(
     val dirScan: StateFlow<DirScanUiState?> get() = store.dirScan
     val editorUi: StateFlow<EditorUiState> get() = store.editorUi
     val errorEvents: SharedFlow<String> get() = store.errorEvents
+
+    private val _taskProgress = MutableStateFlow<TaskProgress?>(null)
+    /** 当前任务进度 */
+    val taskProgress: StateFlow<TaskProgress?> = _taskProgress.asStateFlow()
 
     fun initialize() {
         if (_initState.value != FmInitState.Pending) return
@@ -359,7 +364,7 @@ class FileManagerViewModel @Inject constructor(
         }
         viewModelScope.launch {
             taskManager.progress.collect { p ->
-                store.updateState { it.copy(taskProgress = p) }
+                _taskProgress.value = p
             }
         }
     }
