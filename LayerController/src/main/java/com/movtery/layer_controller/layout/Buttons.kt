@@ -87,10 +87,14 @@ internal fun TextButton(
     eventHandler: EventHandler? = null,
     drawLine: (ObservableWidget, List<GuideLine>) -> Unit = { _, _ -> },
     onLineCancel: (ObservableWidget) -> Unit = {},
-    isPressed: Boolean,
     onTapInEditMode: () -> Unit = {}
 ) {
     if (visible) {
+        val isPressed = when (data) {
+            is ObservableNormalData -> data.isPressed
+            else -> false
+        }
+
         val styleId = data.styleId
         val style = allStyles
             .takeIf { data.styleId != null }

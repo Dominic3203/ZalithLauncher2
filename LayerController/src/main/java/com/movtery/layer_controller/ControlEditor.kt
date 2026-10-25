@@ -512,8 +512,7 @@ private fun ControlWidgetRenderer(
     @Composable
     fun RenderWidget(
         data: ObservableWidget,
-        layer: ObservableControlLayer,
-        isPressed: Boolean
+        layer: ObservableControlLayer
     ) {
         TextButton(
             isEditMode = true,
@@ -534,7 +533,6 @@ private fun ControlWidgetRenderer(
             snapThresholdValue = snapThresholdValue,
             drawLine = drawLine,
             onLineCancel = onLineCancel,
-            isPressed = isPressed,
             onTapInEditMode = {
                 onButtonTap(data, layer)
             }
@@ -553,11 +551,11 @@ private fun ControlWidgetRenderer(
                 allWidgetsMap[layer] = widgetsInLayer
 
                 textBoxes.forEach { data ->
-                    RenderWidget(data, layer, isPressed = false)
+                    RenderWidget(data, layer)
                 }
 
                 normalButtons.forEach { data ->
-                    RenderWidget(data, layer, data.isPressed)
+                    RenderWidget(data, layer)
                 }
 
                 joystickButtons.forEach { data ->
