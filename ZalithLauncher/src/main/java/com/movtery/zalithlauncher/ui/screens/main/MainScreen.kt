@@ -55,8 +55,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -135,15 +136,12 @@ fun MainScreen(
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     //监控当前是否有任务正在进行
+    var taskRunning by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         TaskSystem.tasksFlow.collect { tasks ->
-            eventViewModel.sendKeepScreen(tasks.isNotEmpty())
-        }
-    }
-
-    val taskRunning by remember {
-        derivedStateOf {
-            TaskSystem.tasksFlow.value.isEmpty()
+            val noTasks = tasks.isEmpty()
+            eventViewModel.sendKeepScreen(!noTasks)
+            taskRunning = noTasks
         }
     }
 
