@@ -127,6 +127,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -381,20 +382,27 @@ class ScreenshotsManageViewModel @Inject constructor(
         SortByEnum.Name, SortByEnum.FileModifiedTime
     )
 
+    private var filterJob: Job? = null
+
     private fun applyFilterAndSort() {
-        filteredScreenshots = allScreenshots
-            .takeIf { it.isNotEmpty() }
-            ?.filter { info ->
-                filter.filterName.isBlank() || info.name.contains(filter.filterName, ignoreCase = true)
-            }
-            ?.sortedWith { o1, o2 ->
-                val value = when (sortByEnum) {
-                    SortByEnum.Name -> o1.name.compareTo(o2.name)
-                    SortByEnum.FileModifiedTime -> o1.lastModified.compareTo(o2.lastModified)
-                    else -> error("This sorting method is not supported: $sortByEnum")
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch(Dispatchers.Default) {
+            val result = allScreenshots
+                .takeIf { it.isNotEmpty() }
+                ?.filter { info ->
+                    filter.filterName.isBlank() || info.name.contains(filter.filterName, ignoreCase = true)
                 }
-                if (isAscending) value else -value
-            }
+                ?.sortedWith { o1, o2 ->
+                    val value = when (sortByEnum) {
+                        SortByEnum.Name -> o1.name.compareTo(o2.name)
+                        SortByEnum.FileModifiedTime -> o1.lastModified.compareTo(o2.lastModified)
+                        else -> error("This sorting method is not supported: $sortByEnum")
+                    }
+                    if (isAscending) value else -value
+                }
+            if (!isActive) return@launch
+            filteredScreenshots = result
+        }
     }
 
     override fun onCleared() {

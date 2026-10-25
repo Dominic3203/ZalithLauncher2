@@ -120,6 +120,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
@@ -236,24 +237,31 @@ private class ShadersManageViewModel(
         SortByEnum.FileName, SortByEnum.FileModifiedTime
     )
 
+    private var filterJob: Job? = null
+
     private fun filterShaders() {
-        filteredShaders = allShaders
-            .takeIf { it.isNotEmpty() }
-            ?.filterShaders(nameFilter)
-            ?.sortedWith { o1, o2 ->
-                val file1 = o1.file
-                val file2 = o2.file
-                val value = when (sortByEnum) {
-                    SortByEnum.FileName -> file1.name.compareTo(file2.name)
-                    SortByEnum.FileModifiedTime -> file2.lastModified().compareTo(file1.lastModified())
-                    else -> error("This sorting method is not supported: $sortByEnum")
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch(Dispatchers.Default) {
+            val result = allShaders
+                .takeIf { it.isNotEmpty() }
+                ?.filterShaders(nameFilter)
+                ?.sortedWith { o1, o2 ->
+                    val file1 = o1.file
+                    val file2 = o2.file
+                    val value = when (sortByEnum) {
+                        SortByEnum.FileName -> file1.name.compareTo(file2.name)
+                        SortByEnum.FileModifiedTime -> file2.lastModified().compareTo(file1.lastModified())
+                        else -> error("This sorting method is not supported: $sortByEnum")
+                    }
+                    if (isAscending) {
+                        value
+                    } else {
+                        -value
+                    }
                 }
-                if (isAscending) {
-                    value
-                } else {
-                    -value
-                }
-            }
+            if (!isActive) return@launch
+            filteredShaders = result
+        }
     }
 }
 

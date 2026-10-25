@@ -147,6 +147,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -347,8 +348,9 @@ private class ServerListViewModel(
      */
     fun filterServers() {
         searchJob?.cancel()
-        searchJob = viewModelScope.launch {
+        searchJob = viewModelScope.launch(Dispatchers.Default) {
             val servers = filteredServers()
+            if (!isActive) return@launch
             _servers.update { servers }
         }
     }
