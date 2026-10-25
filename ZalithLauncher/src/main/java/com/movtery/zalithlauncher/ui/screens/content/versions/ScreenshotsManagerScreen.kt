@@ -30,7 +30,6 @@ import android.provider.MediaStore
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -386,8 +385,7 @@ class ScreenshotsManageViewModel @Inject constructor(
         filteredScreenshots = allScreenshots
             .takeIf { it.isNotEmpty() }
             ?.filter { info ->
-                if (filter.filterName.isBlank()) true
-                else info.name.contains(filter.filterName, ignoreCase = true)
+                filter.filterName.isBlank() || info.name.contains(filter.filterName, ignoreCase = true)
             }
             ?.sortedWith { o1, o2 ->
                 val value = when (sortByEnum) {
@@ -770,7 +768,6 @@ private fun ScreenshotGrid(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScreenshotItemLayout(
     modifier: Modifier = Modifier,

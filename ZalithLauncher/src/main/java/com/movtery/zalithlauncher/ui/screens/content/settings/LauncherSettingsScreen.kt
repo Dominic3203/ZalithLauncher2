@@ -43,7 +43,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -133,7 +132,6 @@ private sealed interface CustomColorOperation {
     data object Dialog: CustomColorOperation
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun LauncherSettingsScreen(
     key: NestedNavKey.Settings,
@@ -174,7 +172,7 @@ fun LauncherSettingsScreen(
                         summary = stringResource(R.string.settings_launcher_color_theme_summary),
                         entries = ColorThemeType.entries,
                         getRadioEnable = { enum ->
-                            if (enum == ColorThemeType.DYNAMIC) Build.VERSION.SDK_INT >= Build.VERSION_CODES.S else true
+                            enum != ColorThemeType.DYNAMIC || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                         },
                         getRadioText = { enum ->
                             when (enum) {

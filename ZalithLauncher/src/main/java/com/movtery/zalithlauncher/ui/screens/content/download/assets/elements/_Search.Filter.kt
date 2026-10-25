@@ -45,7 +45,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -105,7 +104,6 @@ import org.jackhuang.hmcl.addon.AddonProjectInfo
  * @param onModLoaderChange 模组加载器变更时
  * @param extraFilter 额外的过滤器UI
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchFilter(
     modifier: Modifier = Modifier,
@@ -271,7 +269,6 @@ enum class FilterSelectionMode {
     Multiple
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <E> SuggestionsText(
     value: String,
@@ -617,7 +614,7 @@ private fun FilterListItem(
     onCheckedChange: (Boolean) -> Unit
 ) {
     val onClick = {
-        val newValue = if (selectionMode == FilterSelectionMode.Multiple) !selected else true
+        val newValue = selectionMode != FilterSelectionMode.Multiple || !selected
         onCheckedChange(newValue)
     }
 

@@ -27,11 +27,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,7 +63,6 @@ import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
  * @param defaultName 输出名称默认值
  * @param onConfirm 确认压缩，回传输出名称与压缩选项
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FmCompressDialog(
     defaultName: String,
@@ -74,7 +73,7 @@ fun FmCompressDialog(
     var name by remember { mutableStateOf(defaultName) }
     var format by remember { mutableStateOf(CompressFormat.ZIP) }
     var advanced by remember { mutableStateOf(false) }
-    var level by remember { mutableStateOf(5) }
+    var level by remember { mutableIntStateOf(5) }
     var method by remember { mutableStateOf(CompressFormat.ZIP.defaultMethod) }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }

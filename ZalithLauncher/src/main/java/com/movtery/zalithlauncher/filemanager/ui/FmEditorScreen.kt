@@ -45,8 +45,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
@@ -140,7 +138,6 @@ private const val TEXT_SIZE_STEP = 1.15f
  * @param onExit 退出文件管理器回调
  * @param onToggleOrientation 横竖屏切换回调
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FmEditorScreen(
     path: Path,
@@ -331,7 +328,7 @@ fun FmEditorScreen(
                     onToggleWordwrap = {
                         wordwrap = !wordwrap
                         FmConfig.setEditorWordwrap(wordwrap)
-                        editor?.setWordwrap(wordwrap)
+                        editor?.isWordwrap = wordwrap
                     },
                     onToggleReadOnly = { userReadOnly = !userReadOnly },
                     onToggleCompletion = {

@@ -20,7 +20,6 @@ package com.movtery.zalithlauncher.ui.screens.content.versions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -312,7 +311,6 @@ private fun VersionInfoLayout(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VersionManagementLayout(
     modifier: Modifier = Modifier,
@@ -398,7 +396,6 @@ private fun VersionManagementLayout(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VersionQuickActions(
     modifier: Modifier = Modifier,

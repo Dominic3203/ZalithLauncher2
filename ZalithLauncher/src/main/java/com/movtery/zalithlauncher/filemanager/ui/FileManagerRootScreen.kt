@@ -18,7 +18,6 @@
 
 package com.movtery.zalithlauncher.filemanager.ui
 
-import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -94,7 +93,6 @@ sealed interface FmNavKey : NavKey {
  * @param onExit 退出文件管理器的回调
  * @param onToggleOrientation 横竖屏切换回调
  */
-@OptIn(ExperimentalActivityApi::class)
 @Composable
 fun FileManagerRootScreen(
     initResult: FileManagerInitResult,
