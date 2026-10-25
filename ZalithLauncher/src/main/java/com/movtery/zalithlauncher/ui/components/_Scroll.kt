@@ -68,20 +68,18 @@ fun Modifier.fadeEdge(
 ): Modifier {
     val fadePx = with(LocalDensity.current) { length.toPx() }
 
-    val topDistance = state.value.toFloat()
-    val startFade = if (state.canScrollBackward) {
-        (topDistance / fadePx).coerceIn(0f, 1f) * fadePx
-    } else 0f
-
-    val bottomDistance = (state.maxValue - state.value).toFloat()
-    val endFade = if (state.canScrollForward) {
-        (bottomDistance / fadePx).coerceIn(0f, 1f) * fadePx
-    } else 0f
-
     return this
         //使用离屏合成，让混合模式只影响当前组件，不污染父级与同级元素
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithContent {
+            val startFade = if (state.canScrollBackward) {
+                (state.value.toFloat() / fadePx).coerceIn(0f, 1f) * fadePx
+            } else 0f
+
+            val endFade = if (state.canScrollForward) {
+                ((state.maxValue - state.value).toFloat() / fadePx).coerceIn(0f, 1f) * fadePx
+            } else 0f
+
             drawContent()
             drawFadeEdges(startFade, endFade, direction, position, style)
         }
@@ -107,36 +105,38 @@ fun Modifier.fadeEdge(
     style: FadeStyle = createDefaultFadeStyle(direction)
 ): Modifier {
     val fadePx = with(LocalDensity.current) { length.toPx() }
-    val layoutInfo = state.layoutInfo
-
-    val firstItem = layoutInfo.visibleItemsInfo.firstOrNull()
-    val topDistancePx = when {
-        firstItem == null -> 0f
-        state.firstVisibleItemIndex == 0 -> -firstItem.offset.toFloat()
-        else -> fadePx //说明已经不在顶部了，直接满强度
-    }
-    val startFade = if (state.canScrollBackward) {
-        (topDistancePx / fadePx).coerceIn(0f, 1f) * fadePx
-    } else 0f
-
-    val lastItem = layoutInfo.visibleItemsInfo.lastOrNull()
-    val viewportHeight = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
-    val bottomDistancePx = when {
-        lastItem == null -> 0f
-        state.canScrollForward.not() -> 0f
-        state.firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size == layoutInfo.totalItemsCount &&
-                lastItem.offset + lastItem.size > viewportHeight ->
-            (lastItem.offset + lastItem.size - viewportHeight).toFloat()
-        else -> fadePx //还没到底部，直接满强度
-    }
-    val endFade = if (state.canScrollForward) {
-        (bottomDistancePx / fadePx).coerceIn(0f, 1f) * fadePx
-    } else 0f
 
     return this
         //使用离屏合成，让混合模式只影响当前组件，不污染父级与同级元素
         .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithContent {
+            //列表状态在绘制阶段读取：滚动时只触发重绘，不会连带调用方重组
+            val layoutInfo = state.layoutInfo
+
+            val firstItem = layoutInfo.visibleItemsInfo.firstOrNull()
+            val topDistancePx = when {
+                firstItem == null -> 0f
+                state.firstVisibleItemIndex == 0 -> -firstItem.offset.toFloat()
+                else -> fadePx //说明已经不在顶部了，直接满强度
+            }
+            val startFade = if (state.canScrollBackward) {
+                (topDistancePx / fadePx).coerceIn(0f, 1f) * fadePx
+            } else 0f
+
+            val lastItem = layoutInfo.visibleItemsInfo.lastOrNull()
+            val viewportHeight = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
+            val bottomDistancePx = when {
+                lastItem == null -> 0f
+                state.canScrollForward.not() -> 0f
+                state.firstVisibleItemIndex + layoutInfo.visibleItemsInfo.size == layoutInfo.totalItemsCount &&
+                        lastItem.offset + lastItem.size > viewportHeight ->
+                    (lastItem.offset + lastItem.size - viewportHeight).toFloat()
+                else -> fadePx //还没到底部，直接满强度
+            }
+            val endFade = if (state.canScrollForward) {
+                (bottomDistancePx / fadePx).coerceIn(0f, 1f) * fadePx
+            } else 0f
+
             drawContent()
             drawFadeEdges(startFade, endFade, direction, position, style)
         }

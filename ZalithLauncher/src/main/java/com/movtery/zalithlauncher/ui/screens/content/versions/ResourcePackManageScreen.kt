@@ -262,7 +262,6 @@ private class ResourcePackManageViewModel(
     }
 
     override fun onCleared() {
-        super.onCleared()
         job?.cancel()
         job = null
     }
