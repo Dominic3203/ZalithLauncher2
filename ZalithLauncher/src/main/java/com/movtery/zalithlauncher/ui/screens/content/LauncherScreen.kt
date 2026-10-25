@@ -108,6 +108,8 @@ import com.movtery.zalithlauncher.ui.screens.content.home.version.LocalHomeCardL
 import com.movtery.zalithlauncher.ui.screens.content.home.version.LocalHomeCardVersionSettings
 import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 private const val ContentWeight = 7f
@@ -578,12 +580,16 @@ private fun ActionMenuTallerContent(
         val skinStamp = account?.getSkinFile()?.lastModified()
         val capeStamp = account?.getCapeFile()?.lastModified()
         val skinBytes by produceState<ByteArray?>(null, account, refreshWardrobe, skinStamp) {
-            value = account?.getSkinFile()?.takeIf { it.exists() }
-                ?.inputStream()?.use { it.readBytes() }
+            value = withContext(Dispatchers.IO) {
+                account?.getSkinFile()?.takeIf { it.exists() }
+                    ?.inputStream()?.use { it.readBytes() }
+            }
         }
         val capeBytes by produceState<ByteArray?>(null, account, refreshWardrobe, capeStamp) {
-            value = account?.getCapeFile()?.takeIf { it.exists() }
-                ?.inputStream()?.use { it.readBytes() }
+            value = withContext(Dispatchers.IO) {
+                account?.getCapeFile()?.takeIf { it.exists() }
+                    ?.inputStream()?.use { it.readBytes() }
+            }
         }
 
         PetModelView(

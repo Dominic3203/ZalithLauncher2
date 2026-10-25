@@ -66,20 +66,20 @@ import com.movtery.zalithlauncher.game.account.auth_server.data.AuthServer
 import com.movtery.zalithlauncher.game.account.isAuthServerAccount
 import com.movtery.zalithlauncher.game.account.isMicrosoftAccount
 import com.movtery.zalithlauncher.game.account.isMicrosoftLogging
+import com.movtery.zalithlauncher.game.account.wardrobe.toArmModel
 import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.MarqueeText
+import com.movtery.zalithlauncher.ui.components.PetModelView
 import com.movtery.zalithlauncher.ui.components.ScalingActionButton
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleEditDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListItem
-import com.movtery.zalithlauncher.ui.components.PetModelView
-import com.movtery.zalithlauncher.game.account.wardrobe.toArmModel
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.AccountItem
 import com.movtery.zalithlauncher.ui.screens.content.elements.AccountOperation
@@ -106,6 +106,8 @@ import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 封装账号界面 UI 交互的回调函数
@@ -293,12 +295,16 @@ private fun ActionsLayout(
         val skinBytes by produceState<ByteArray?>(
             null, currentAccount, refreshWardrobe, skinStamp, armModel
         ) {
-            value = currentAccount?.getSkinFile()?.takeIf { it.exists() }
-                ?.inputStream()?.use { it.readBytes() }
+            value = withContext(Dispatchers.IO) {
+                currentAccount?.getSkinFile()?.takeIf { it.exists() }
+                    ?.inputStream()?.use { it.readBytes() }
+            }
         }
         val capeBytes by produceState<ByteArray?>(null, currentAccount, refreshWardrobe, capeStamp) {
-            value = currentAccount?.getCapeFile()?.takeIf { it.exists() }
-                ?.inputStream()?.use { it.readBytes() }
+            value = withContext(Dispatchers.IO) {
+                currentAccount?.getCapeFile()?.takeIf { it.exists() }
+                    ?.inputStream()?.use { it.readBytes() }
+            }
         }
         PetModelView(
             modifier = Modifier

@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -108,8 +109,10 @@ import com.movtery.zalithlauncher.viewmodel.ModifyDiffs
 import com.movtery.zalithlauncher.viewmodel.ModifyOperation
 import com.movtery.zalithlauncher.viewmodel.ModifyPayload
 import com.movtery.zalithlauncher.viewmodel.ModifyVersionViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 private const val TAG = "ModifyVersionScreen"
@@ -189,7 +192,7 @@ private fun ModifyVersionContent(
     val installedLoaders = rememberInstalledLoaders(version, versionInfo)
 
     val addonsVM = viewModel(
-        key = version.toString() + "_ModifyVersion_" + targetGameVersion
+        key = version.toString() + "_ModifyVersion_" + targetGameVersion + "_" + installedLoaders
     ) {
         ModifyAddonsViewModel(
             gameVersion = targetGameVersion,
@@ -710,25 +713,30 @@ private class ModifyAddonsViewModel(
 private fun rememberInstalledLoaders(
     version: Version,
     versionInfo: VersionInfo
-): List<VersionInfo.LoaderInfo> = remember(version) {
-    buildList {
-        runCatching {
-            val jsonFile = File(version.getVersionPath(), "${version.getVersionName()}.json")
-            GSON.fromJson(jsonFile.readText(), LaunchFor::class.java)
-        }.onFailure { e ->
-            Logger.warning(TAG, "Failed to parse the launchFor info of the version.", e)
-        }.getOrNull()?.infos?.forEach { info ->
-            if (info.name.equals("Minecraft", ignoreCase = true)) return@forEach
-            ModLoader.entries.find { it.displayName.equals(info.name, ignoreCase = true) }?.let { loader ->
-                add(VersionInfo.LoaderInfo(loader = loader, version = info.version))
-            }
+): List<VersionInfo.LoaderInfo> {
+    val installedLoaders by produceState(emptyList(), version, versionInfo) {
+        value = withContext(Dispatchers.IO) {
+            buildList {
+                runCatching {
+                    val jsonFile = File(version.getVersionPath(), "${version.getVersionName()}.json")
+                    GSON.fromJson(jsonFile.readText(), LaunchFor::class.java)
+                }.onFailure { e ->
+                    Logger.warning(TAG, "Failed to parse the launchFor info of the version.", e)
+                }.getOrNull()?.infos?.forEach { info ->
+                    if (info.name.equals("Minecraft", ignoreCase = true)) return@forEach
+                    ModLoader.entries.find { it.displayName.equals(info.name, ignoreCase = true) }?.let { loader ->
+                        add(VersionInfo.LoaderInfo(loader = loader, version = info.version))
+                    }
+                }
+                versionInfo.loaderInfos.forEach { loaderInfo ->
+                    if (none { it.loader == loaderInfo.loader }) {
+                        add(loaderInfo)
+                    }
+                }
+            }.distinctBy { it.loader }
         }
-        versionInfo.loaderInfos.forEach { loaderInfo ->
-            if (none { it.loader == loaderInfo.loader }) {
-                add(loaderInfo)
-            }
-        }
-    }.distinctBy { it.loader }
+    }
+    return installedLoaders
 }
 
 /**

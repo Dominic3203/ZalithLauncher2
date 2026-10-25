@@ -50,6 +50,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val TAG = "SplashActivity"
@@ -77,24 +78,26 @@ class SplashActivity : BaseAppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         initUnpackItems()
-        checkAllTask()
 
-        if (checkTasksToMain()) {
-            return
-        }
-
-        setContent {
-            ZalithLauncherTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = backgroundColor(),
-                    contentColor = onBackgroundColor()
-                ) {
-                    SplashScreen(
-                        startAllTask = { startAllTask() },
-                        unpackItems = unpackItems,
-                        screenViewModel = backStackViewModel
-                    )
+        lifecycleScope.launch(Dispatchers.Main) {
+            withContext(Dispatchers.IO) {
+                checkAllTask()
+            }
+            if (!checkTasksToMain()) {
+                setContent {
+                    ZalithLauncherTheme {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = backgroundColor(),
+                            contentColor = onBackgroundColor()
+                        ) {
+                            SplashScreen(
+                                startAllTask = { startAllTask() },
+                                unpackItems = unpackItems,
+                                screenViewModel = backStackViewModel
+                            )
+                        }
+                    }
                 }
             }
         }
