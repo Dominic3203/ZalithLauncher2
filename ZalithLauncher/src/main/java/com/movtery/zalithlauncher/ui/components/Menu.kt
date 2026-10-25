@@ -649,7 +649,7 @@ fun MenuSliderLayout(
     color: Color = itemColor(influencedByBackground),
     contentColor: Color = onItemColor(),
 ) {
-    val formatter = DecimalFormat(decimalFormat)
+    val formatter = remember(decimalFormat) { DecimalFormat(decimalFormat) }
     fun getTextString(value: Float) = formatter.format(value) + (suffix ?: "")
 
     val interactionSource = remember { MutableInteractionSource() }
