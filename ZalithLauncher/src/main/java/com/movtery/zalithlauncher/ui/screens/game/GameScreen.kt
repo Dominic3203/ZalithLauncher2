@@ -824,12 +824,6 @@ fun GameScreen(
                     }
                 }
 
-                val gameFps: Int? = if (showFps) {
-                    viewModel.gameFps
-                } else {
-                    null
-                }
-
                 DraggableGameBall(
                     position = AllSettings.menuBallPos.state,
                     onPositionChanged = {
@@ -838,11 +832,11 @@ fun GameScreen(
                     onSavePos = {
                         AllSettings.menuBallPos.save()
                     },
-                    gameFps = gameFps,
+                    gameFps = { if (showFps) viewModel.gameFps else null },
                     fpsDisplayMode = AllSettings.fpsDisplayMode.state,
-                    fpsHistory = viewModel.fpsHistory,
-                    fpsMax = viewModel.fpsMax,
-                    fpsMin = viewModel.fpsMin,
+                    fpsHistory = { viewModel.fpsHistory },
+                    fpsMax = { viewModel.fpsMax },
+                    fpsMin = { viewModel.fpsMin },
                     showMemory = AllSettings.showMemory.state,
                     opened = viewModel.gameMenuState == MenuState.SHOW,
                     alpha = AllSettings.menuBallOpacity.state / 100f,
