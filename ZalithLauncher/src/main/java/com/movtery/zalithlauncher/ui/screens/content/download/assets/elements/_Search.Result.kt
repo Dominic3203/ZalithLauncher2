@@ -180,8 +180,8 @@ fun ResultListLayout(
                         .height(controllerHeight)
                         .align(Alignment.TopEnd)
                         .padding(top = 12.dp, end = 6.dp)
-                        .alpha(animatedAlpha)
                         .graphicsLayer {
+                            alpha = animatedAlpha
                             scaleX = animatedScale
                             scaleY = animatedScale
                             transformOrigin = TransformOrigin(1f, 0f)
