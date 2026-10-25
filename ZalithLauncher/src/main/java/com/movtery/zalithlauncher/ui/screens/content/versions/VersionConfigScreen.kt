@@ -30,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +56,6 @@ import com.movtery.zalithlauncher.game.support.touch_controller.VibrationHandler
 import com.movtery.zalithlauncher.game.version.installed.GraphicsApi
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionConfig
-import com.movtery.zalithlauncher.ui.screens.content.settings.RendererV2ConfigDialog
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.setting.unit.floatRange
 import com.movtery.zalithlauncher.setting.unit.getOrMin
@@ -74,6 +74,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.MicrophoneCheckOpe
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrophoneCheckState
 import com.movtery.zalithlauncher.ui.screens.content.settings.DriverSummaryLayout
 import com.movtery.zalithlauncher.ui.screens.content.settings.RendererSummaryLayout
+import com.movtery.zalithlauncher.ui.screens.content.settings.RendererV2ConfigDialog
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.CardPosition
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.EnumSettingsCard
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.IntSliderSettingsCard
@@ -89,8 +90,15 @@ import com.movtery.zalithlauncher.utils.platform.getMaxMemoryForSettings
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 private const val TAG = "VersionConfigScreen"
+
+/** 页面退出后的配置保存作用域 */
+private val configSaveScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
 @Composable
 fun VersionConfigScreen(
@@ -114,6 +122,17 @@ fun VersionConfigScreen(
         Triple(NormalNavKey.Versions.Config, versionsScreenKey, false)
     ) { isVisible ->
         val config = version.getVersionConfig()
+        //标记本次是否修改过配置
+        var configDirty by remember { mutableStateOf(false) }
+
+        DisposableEffect(version) {
+            onDispose {
+                if (configDirty) {
+                    // 页面退出时统一进行保存
+                    saveConfigAsync(config, submitError)
+                }
+            }
+        }
 
         AnimatedColumn(
             modifier = Modifier
@@ -128,7 +147,7 @@ fun VersionConfigScreen(
                         .fillMaxWidth()
                         .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
                     config = config,
-                    submitError = submitError
+                    onConfigChanged = { configDirty = true },
                 )
             }
 
@@ -138,7 +157,7 @@ fun VersionConfigScreen(
                         .fillMaxWidth()
                         .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
                     config = config,
-                    submitError = submitError
+                    onConfigChanged = { configDirty = true },
                 )
             }
 
@@ -148,11 +167,11 @@ fun VersionConfigScreen(
                         .fillMaxWidth()
                         .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
                     config = config,
+                    onConfigChanged = { configDirty = true },
                     onCheckVulkan = {
                         onCheckVulkan(version)
                     },
                     showToast = showToast,
-                    submitError = submitError
                 )
             }
         }
@@ -162,7 +181,7 @@ fun VersionConfigScreen(
 @Composable
 private fun VersionConfigs(
     config: VersionConfig,
-    submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
+    onConfigChanged: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SettingsCardColumn(
@@ -182,7 +201,7 @@ private fun VersionConfigs(
             onValueChange = { type ->
                 if (config.isolationType != type) {
                     config.isolationType = type
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             title = stringResource(R.string.versions_config_isolation_title),
@@ -196,7 +215,7 @@ private fun VersionConfigs(
             onValueChange = { type ->
                 if (config.skipGameIntegrityCheck != type) {
                     config.skipGameIntegrityCheck = type
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             title = stringResource(R.string.settings_game_skip_game_integrity_check_title),
@@ -252,7 +271,7 @@ private fun VersionConfigs(
                 if (config.renderer != item.id) {
                     config.renderer = item.id
                     currentRendererId = item.id
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -304,7 +323,7 @@ private fun VersionConfigs(
             onValueChange = { item ->
                 if (config.driver != item.id) {
                     config.driver = item.id
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -333,7 +352,7 @@ private fun VersionConfigs(
             onValueChange = { item ->
                 if (config.graphicsApi?.name != item.id) {
                     config.graphicsApi = GraphicsApi.entries.find { it.name == item.id }
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -359,7 +378,7 @@ private fun VersionConfigs(
             onValueChange = {
                 if (config.control != it.id) {
                     config.control = it.id
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -369,7 +388,7 @@ private fun VersionConfigs(
 @Composable
 private fun GameConfigs(
     config: VersionConfig,
-    submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
+    onConfigChanged: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SettingsCardColumn(
@@ -393,7 +412,7 @@ private fun GameConfigs(
             onValueChange = { item ->
                 if (config.javaRuntime != item.id) {
                     config.javaRuntime = item.id
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -414,8 +433,8 @@ private fun GameConfigs(
             onValueChange = {
                 config.ramAllocation = it
                 ramAllocation = it
+                onConfigChanged()
             },
-            onValueChangeFinished = { config.saveOrShowError(submitError) },
             previewContent = {
                 AnimatedVisibility(
                     modifier = Modifier.fillMaxWidth(),
@@ -446,7 +465,7 @@ private fun GameConfigs(
                 customInfo = value
                 if (config.customInfo != value) {
                     config.customInfo = value
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             title = stringResource(R.string.settings_game_version_custom_info_title),
@@ -467,7 +486,7 @@ private fun GameConfigs(
                 gameArgs = value
                 if (config.gameArgs != value) {
                     config.gameArgs = value
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             label = {
@@ -486,7 +505,7 @@ private fun GameConfigs(
                 jvmArgs = value
                 if (config.jvmArgs != value) {
                     config.jvmArgs = value
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             label = {
@@ -505,7 +524,7 @@ private fun GameConfigs(
                 serverIp = value
                 if (config.serverIp != value) {
                     config.serverIp = value
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             },
             label = {
@@ -518,9 +537,9 @@ private fun GameConfigs(
 @Composable
 private fun SupportConfigs(
     config: VersionConfig,
+    onConfigChanged: () -> Unit,
     onCheckVulkan: () -> Unit,
     showToast: (AndroidStringText) -> Unit,
-    submitError: (ErrorViewModel.ThrowableMessage) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -572,7 +591,7 @@ private fun SupportConfigs(
                 }
                 if (config.touchVibrateKind != enum) {
                     config.touchVibrateKind = enum
-                    config.saveOrShowError(submitError)
+                    onConfigChanged()
                 }
             }
         )
@@ -588,6 +607,7 @@ private fun SupportConfigs(
                 onValueChange = {
                     touchVibrateDuration = it
                     config.touchVibrateDuration = touchVibrateDuration
+                    onConfigChanged()
                 },
                 onValueChangeFinished = {
                     vibrator?.let { vibrator ->
@@ -597,7 +617,6 @@ private fun SupportConfigs(
                             vibrateKind = touchVibrateKind,
                         )
                     }
-                    config.saveOrShowError(submitError)
                 },
                 suffix = "ms",
                 fineTuningControl = true
@@ -640,18 +659,21 @@ private fun <E> getIDList(list: List<E>, toIDItem: (E) -> IDItem): List<IDItem> 
     }
 }
 
-private fun VersionConfig.saveOrShowError(
+private fun saveConfigAsync(
+    config: VersionConfig,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
-    runCatching {
-        saveWithThrowable()
-    }.onFailure { e ->
-        Logger.error(TAG, "Failed to save version config!", e)
-        submitError(
-            ErrorViewModel.ThrowableMessage(
-                title = androidText(R.string.versions_config_failed_to_save),
-                message = androidText(e.getMessageOrToString())
+    configSaveScope.launch {
+        runCatching {
+            config.saveWithThrowable()
+        }.onFailure { e ->
+            Logger.error(TAG, "Failed to save version config!", e)
+            submitError(
+                ErrorViewModel.ThrowableMessage(
+                    title = androidText(R.string.versions_config_failed_to_save),
+                    message = androidText(e.getMessageOrToString())
+                )
             )
-        )
+        }
     }
 }
