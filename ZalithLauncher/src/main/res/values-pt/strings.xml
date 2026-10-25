@@ -944,8 +944,6 @@
     <string name="versions_export_type_modrinth">Modpack Modrinth</string>
     <string name="versions_export_type_summary_common">Pode ser importado por launchers comuns de terceiros</string>
     <string name="versions_export_type_curseforge">Modpack do Curseforge</string>
-    <string name="versions_export_type_multimc">Modpack MultiMC</string>
-    <string name="versions_export_type_multimc_summary">Pode ser importado por %s, MultiMC e outros launchers</string>
     <string name="versions_export_alias_options">Configurações do Jogo</string>
     <string name="versions_export_alias_resource_packs">Pasta de Resource Packs</string>
     <string name="versions_export_alias_mods">Pasta de Mods</string>
@@ -1182,7 +1180,6 @@
     <string name="settings_gamepad_remapping_finished_saved">Mapeamento do controlo gravado com sucesso. Agora pode fechar esta caixa de diálogo!</string>
     <string name="settings_gamepad_config_summary">Selecione o mapeamento do gamepad configuração a ser usada</string>
     <string name="versions_export_pack_min_memory">Memória mínima alocada</string>
-    <string name="versions_export_pack_max_memory">Memória máxima alocada</string>
 
     <string name="guide_main_welcome_title">Bem-vindo ao %s!</string>
     <string name="guide_main_welcome_text">Vamos dar uma vista de olhos rápida às funções do ecrã principal.</string>

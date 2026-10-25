@@ -1081,8 +1081,6 @@
     <string name="versions_export_type_modrinth">Сборка формата Modrinth</string>
     <string name="versions_export_type_summary_common">Может быть импортирована в большинство сторонних лаунчеров</string>
     <string name="versions_export_type_curseforge">Сборка формата CurseForge</string>
-    <string name="versions_export_type_multimc">Сборка формата MultiMC</string>
-    <string name="versions_export_type_multimc_summary">Может быть импортирована в %s, MultiMC и другие лаунчеры</string>
     <string name="versions_export_alias_options">Настройки игры</string>
     <string name="generic_edit">Редактировать</string>
     <string name="generic_view">Просмотреть</string>
@@ -1104,7 +1102,6 @@
     <string name="versions_export_pack_java_args">Аргументы Java Virtual Machine</string>
     <string name="versions_export_pack_website">Сайт сборки</string>
     <string name="versions_export_pack_min_memory">Минимальный объём выделенной оперативки</string>
-    <string name="versions_export_pack_max_memory">Максимальный объём выделенной оперативки</string>
     <string name="versions_export_pack_pack_remote">Загружать ключевые ресурсы из %s</string>
     <string name="versions_export_pack_also_pack_curseforge">Включить удалённые ресурсы CurseForge в сборку</string>
     <string name="versions_export_pack_select_files">Выбрать файлы</string>

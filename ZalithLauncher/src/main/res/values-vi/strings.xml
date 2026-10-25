@@ -1105,8 +1105,6 @@
     <string name="versions_export_type_modrinth">Gói mod Modrinth</string>
     <string name="versions_export_type_summary_common">Có thể nhập bởi các launcher bên thứ ba phổ biến</string>
     <string name="versions_export_type_curseforge">Gói mod CurseForge</string>
-    <string name="versions_export_type_multimc">Gói mod MultiMC</string>
-    <string name="versions_export_type_multimc_summary">Có thể nhập bởi %s, MultiMC và các launcher khác</string>
     <string name="versions_export_alias_options">Cài đặt trò chơi</string>
     <string name="versions_export_alias_resource_packs">Thư mục gói tài nguyên</string>
     <string name="versions_export_alias_mods">Thư mục mod</string>
@@ -1123,7 +1121,6 @@
     <string name="versions_export_pack_java_args">Tham số máy ảo Java</string>
     <string name="versions_export_pack_website">Trang web chính thức của gói mod</string>
     <string name="versions_export_pack_min_memory">Bộ nhớ được phân bổ tối thiểu</string>
-    <string name="versions_export_pack_max_memory">Bộ nhớ được phân bổ tối đa</string>
     <string name="versions_export_pack_pack_remote">Tải xuống các tài nguyên quan trọng từ %s</string>
     <string name="versions_export_pack_also_pack_curseforge">Bao gồm các tài nguyên từ xa của CurseForge trong gói</string>
     <string name="versions_export_pack_select_files">Chọn tệp</string>

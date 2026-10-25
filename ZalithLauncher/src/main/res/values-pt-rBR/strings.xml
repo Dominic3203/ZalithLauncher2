@@ -1046,8 +1046,6 @@
     <string name="versions_export_type_mcbbs_summary">Pode ser importado por %s, HMCL e outros launchers</string>
     <string name="versions_export_type_modrinth">Modpack Modrinth</string>
     <string name="versions_export_type_summary_common">Pode ser importado por launchers comuns de terceiros</string>
-    <string name="versions_export_type_multimc">Modpack MultiMC</string>
-    <string name="versions_export_type_multimc_summary">Pode ser importado por %s, MultiMC e outros launchers</string>
     <string name="versions_export_alias_options">Configurações do Jogo</string>
     <string name="versions_export_alias_resource_packs">Pasta de Resource Packs</string>
     <string name="versions_export_alias_mods">Pasta de Mods</string>
@@ -1066,7 +1064,6 @@
     <string name="versions_export_pack_java_args">Argumentos da Máquina Virtual Java</string>
     <string name="versions_export_pack_website">Site do Modpack</string>
     <string name="versions_export_pack_min_memory">Quantidade de RAM mínima para rodar o Modpack:</string>
-    <string name="versions_export_pack_max_memory">Quantidade de RAM recomendada para obter a melhor experiência com o Modpack:</string>
     <string name="versions_export_pack_pack_remote">Baixar recursos principais do %s</string>
     <string name="versions_export_pack_also_pack_curseforge">Incluir recursos remotos do CurseForge no pacote</string>
     <string name="versions_export_pack_select_files">Selecionar Arquivos</string>
