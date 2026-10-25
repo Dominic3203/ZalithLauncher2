@@ -18,7 +18,6 @@
 
 package com.movtery.layer_controller
 
-import androidx.annotation.FloatRange
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -77,7 +76,7 @@ fun ControlBoxLayout(
     eventHandler: EventHandler = EventHandler(),
     isCursorGrabbing: Boolean,
     checkOccupiedPointers: (PointerId) -> Boolean,
-    @FloatRange(0.0, 1.0) opacity: Float = 1f,
+    opacity: () -> Float = { 1f },
     markPointerAsMoveOnly: (PointerId) -> Unit = {},
     onOccupiedPointer: (PointerId) -> Unit = {},
     onReleasePointer: (PointerId) -> Unit = {},
@@ -132,7 +131,7 @@ private fun BoxWithConstraintsScope.BaseControlBoxLayout(
     observedLayout: ObservableControlLayout,
     eventHandler: EventHandler,
     checkOccupiedPointers: (PointerId) -> Boolean,
-    @FloatRange(0.0, 1.0) opacity: Float,
+    opacity: () -> Float,
     markPointerAsMoveOnly: (PointerId) -> Unit,
     onOccupiedPointer: (PointerId) -> Unit,
     onReleasePointer: (PointerId) -> Unit,
@@ -238,7 +237,7 @@ private fun BoxWithConstraintsScope.BaseControlBoxLayout(
 @Composable
 private fun ControlsRendererLayer(
     isDark: Boolean,
-    @FloatRange(0.0, 1.0) opacity: Float,
+    opacity: () -> Float,
     layers: List<ObservableControlLayer>,
     styles: List<ObservableButtonStyle>,
     joystickStyles: List<ObservableJoystickStyle>,
@@ -251,7 +250,7 @@ private fun ControlsRendererLayer(
     onReleasePointer: (PointerId) -> Unit
 ) {
     Layout(
-        modifier = Modifier.alpha(alpha = opacity),
+        modifier = Modifier.alpha(alpha = opacity()),
         content = {
             //按图层顺序渲染所有可见的控件
             layers.forEach { layer ->
