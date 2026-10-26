@@ -161,6 +161,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -315,25 +316,32 @@ private class ModsManageViewModel(
         SortByEnum.FileName, SortByEnum.FileModifiedTime
     )
 
+    private var filterJob: Job? = null
+
     private fun filterMods(context: Context? = null) {
-        refreshCounter()
-        filteredMods = allMods
-            .takeIf { it.isNotEmpty() }
-            ?.filterMods(nameFilter, stateFilter, context)
-            ?.let { mods ->
-                //排序前先快照排序键，排序过程中键值不再变化，保证比较结果前后一致
-                val entries = mods.map { mod ->
-                    val file = mod.localMod.file
-                    mod to ModsSortKey(
-                        name = file.name,
-                        lowercaseName = file.name.lowercase(Locale.ROOT),
-                        lastModified = file.lastModified()
-                    )
+        filterJob?.cancel()
+        filterJob = viewModelScope.launch(Dispatchers.Default) {
+            refreshCounter()
+            val result = allMods
+                .takeIf { it.isNotEmpty() }
+                ?.filterMods(nameFilter, stateFilter, context)
+                ?.let { mods ->
+                    //排序前先快照排序键，排序过程中键值不再变化，保证比较结果前后一致
+                    val entries = mods.map { mod ->
+                        val file = mod.localMod.file
+                        mod to ModsSortKey(
+                            name = file.name,
+                            lowercaseName = file.name.lowercase(Locale.ROOT),
+                            lastModified = file.lastModified()
+                        )
+                    }
+                    entries
+                        .sortedWith(compareBy(modsComparator(sortByEnum, isAscending)) { it.second })
+                        .map { (mod, _) -> mod }
                 }
-                entries
-                    .sortedWith(compareBy(modsComparator(sortByEnum, isAscending)) { it.second })
-                    .map { (mod, _) -> mod }
-            }
+            if (!isActive) return@launch
+            filteredMods = result
+        }
     }
 
     fun selectAllMods() {

@@ -50,6 +50,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.filemanager.logic.task.TaskProgress
 import com.movtery.zalithlauncher.filemanager.ui.dialogs.FmProgressDialog
 import com.movtery.zalithlauncher.filemanager.ui.theme.FmAnimations
 import com.movtery.zalithlauncher.filemanager.ui.theme.fmBackgroundColor
@@ -59,6 +60,7 @@ import com.movtery.zalithlauncher.filemanager.viewmodel.FmInitState
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -276,16 +278,30 @@ fun FileManagerRootScreen(
                     }
 
                     // 进度弹窗
-                    val progress = uiState.taskProgress
-                    if (progress != null && progress.kind.shouldShowProgressDialog) {
-                        FmProgressDialog(
-                            progress = progress,
-                            onCancel = { vm.cancelCurrentTask() }
-                        )
-                    }
+                    FmProgressDialogHost(
+                        progress = vm.taskProgress,
+                        onCancel = { vm.cancelCurrentTask() }
+                    )
                 }
             }
         }
+    }
+}
+
+/**
+ * 收集任务进度并按需显示进度弹窗，进度更新只重组此组件自身
+ */
+@Composable
+private fun FmProgressDialogHost(
+    progress: StateFlow<TaskProgress?>,
+    onCancel: () -> Unit
+) {
+    val state = progress.collectAsStateWithLifecycle().value
+    if (state != null && state.kind.shouldShowProgressDialog) {
+        FmProgressDialog(
+            progress = state,
+            onCancel = onCancel
+        )
     }
 }
 

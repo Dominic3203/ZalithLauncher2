@@ -75,7 +75,7 @@ fun SimpleTextSlider(
     fineTuningStep: Float = 0.5f,
     appendContent: @Composable () -> Unit = {}
 ) {
-    val formatter = DecimalFormat(decimalFormat)
+    val formatter = remember(decimalFormat) { DecimalFormat(decimalFormat) }
     fun getTextString(value: Float) = "${if (toInt) {
         value.toInt()
     } else {

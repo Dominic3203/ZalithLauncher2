@@ -65,7 +65,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -73,10 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.ImageLoader
 import coil3.compose.AsyncImage
-import coil3.gif.GifDecoder
-import coil3.svg.SvgDecoder
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.path.GamePath
@@ -971,16 +967,6 @@ fun VersionIconImage(
     }
     val defaultIcon = painterResource(defaultIconRes)
 
-    val context = LocalContext.current
-    val loader = remember(version, refreshKey) {
-        ImageLoader.Builder(context)
-            .components {
-                add(GifDecoder.Factory())
-                add(SvgDecoder.Factory())
-            }
-            .build()
-    }
-
     val model = remember(version, refreshKey) {
         version?.let {
             val iconFile = it.getVersionIconFile()
@@ -1001,7 +987,6 @@ fun VersionIconImage(
         else -> {
             AsyncImage(
                 model = model,
-                imageLoader = loader,
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = modifier

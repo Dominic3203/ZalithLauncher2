@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -81,7 +82,7 @@ import kotlin.coroutines.CoroutineContext
 fun rememberDialogMaxHeight(): Dp {
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
-    var maxHeight by remember(windowInfo) { mutableStateOf(windowInfo.containerSize.height) }
+    var maxHeight by remember(windowInfo) { mutableIntStateOf(windowInfo.containerSize.height) }
     maxHeight = maxOf(maxHeight, windowInfo.containerSize.height)
     return with(density) { maxHeight.toDp() }
 }

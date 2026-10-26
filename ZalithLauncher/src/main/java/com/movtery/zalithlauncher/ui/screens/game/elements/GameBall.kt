@@ -60,11 +60,11 @@ fun DraggableGameBall(
     position: Offset,
     onPositionChanged: (Offset) -> Unit,
     onSavePos: () -> Unit,
-    gameFps: Int?,
+    gameFps: () -> Int?,
     fpsDisplayMode: FpsDisplayMode,
-    fpsHistory: List<Int>,
-    fpsMax: Int,
-    fpsMin: Int,
+    fpsHistory: () -> List<Int>,
+    fpsMax: () -> Int,
+    fpsMin: () -> Int,
     showMemory: Boolean,
     opened: Boolean,
     alpha: Float = 1f,
@@ -94,16 +94,21 @@ fun DraggableGameBall(
 
 @Composable
 private fun GameBallContent(
-    gameFps: Int?,
+    gameFps: () -> Int?,
     fpsDisplayMode: FpsDisplayMode,
-    fpsHistory: List<Int>,
-    fpsMax: Int,
-    fpsMin: Int,
+    fpsHistory: () -> List<Int>,
+    fpsMax: () -> Int,
+    fpsMin: () -> Int,
     showMemory: Boolean,
     opened: Boolean,
 ) {
-    val showFps = remember(gameFps) {
-        gameFps != null
+    val fps = gameFps()
+    val history = fpsHistory()
+    val fpsMaxValue = fpsMax()
+    val fpsMinValue = fpsMin()
+
+    val showFps = remember(fps) {
+        fps != null
     }
 
     Row(
@@ -161,14 +166,14 @@ private fun GameBallContent(
                     //帧率图表
                     FpsChart(
                         modifier = Modifier.padding(end = 4.dp),
-                        history = fpsHistory,
-                        fpsMax = fpsMax,
-                        fpsMin = fpsMin
+                        history = history,
+                        fpsMax = fpsMaxValue,
+                        fpsMin = fpsMinValue
                     )
                 } else {
                     Text(
                         modifier = Modifier.padding(end = 4.dp),
-                        text = "FPS: ${gameFps ?: 0}",
+                        text = "FPS: ${fps ?: 0}",
                         style = MaterialTheme.typography.labelMedium
                     )
                 }

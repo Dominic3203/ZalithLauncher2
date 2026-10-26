@@ -507,15 +507,17 @@ private fun VersionsLayout(
             val barShownFraction = remember(topAppBarState) {
                 derivedStateOf { 1f - topAppBarState.collapsedFraction }
             }
-            val actionBarShadowElevation = if (backgroundVisible()) {
-                0.dp // 背景可见时不使用阴影，因为卡片会半透明化
-            } else {
-                5.dp * barShownFraction.value * listScrolledFraction.value
-            }
+            //背景可见时不使用阴影，因为卡片会半透明化
+            val withShadow = !backgroundVisible()
 
-            val listTopFadePx = (headerHeightPx + headerTopPaddingPx + 80f) *
-                    listScrolledFraction.value *
-                    barShownFraction.value
+            //悬浮操作栏的阴影在图层块内读取滚动比例，滚动时只更新图层不重组
+            val barShape = MaterialTheme.shapes.large
+            val barShadowModifier = Modifier.graphicsLayer {
+                if (withShadow) {
+                    shadowElevation = 5.dp.toPx() * listScrolledFraction.value * barShownFraction.value
+                }
+                shape = barShape
+            }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 if (versions.isNotEmpty()) {
@@ -529,7 +531,11 @@ private fun VersionsLayout(
                                 orientation = Orientation.Vertical,
                             )
                             .clipToBounds()
-                            .topFade(listTopFadePx),
+                            .topFade {
+                                (headerHeightPx + headerTopPaddingPx + 80f) *
+                                        listScrolledFraction.value *
+                                        barShownFraction.value
+                            },
                         contentPadding = PaddingValues(
                             start = 12.dp,
                             top = with(density) {
@@ -597,11 +603,12 @@ private fun VersionsLayout(
                         val cardColor = cardColor()
 
                         Surface(
-                            modifier = Modifier.height(IntrinsicSize.Max),
+                            modifier = Modifier
+                                .height(IntrinsicSize.Max)
+                                .then(barShadowModifier),
                             color = cardColor,
                             contentColor = onCardColor(),
                             shape = MaterialTheme.shapes.large,
-                            shadowElevation = actionBarShadowElevation,
                         ) {
                             Row(
                                 modifier = Modifier
@@ -629,11 +636,11 @@ private fun VersionsLayout(
                         Surface(
                             modifier = Modifier
                                 .weight(1f, fill = false)
-                                .height(IntrinsicSize.Max),
+                                .height(IntrinsicSize.Max)
+                                .then(barShadowModifier),
                             color = cardColor,
                             contentColor = onCardColor(),
                             shape = MaterialTheme.shapes.large,
-                            shadowElevation = actionBarShadowElevation,
                         ) {
                             val scrollState = rememberScrollState()
                             Row(
@@ -677,22 +684,26 @@ private fun VersionsLayout(
 }
 
 /**
- * 在组件顶部绘制指定像素高度的线性渐隐
+ * 在组件顶部绘制指定像素高度的线性渐隐；高度在绘制阶段读取，随滚动只触发重绘
  */
-private fun Modifier.topFade(heightPx: Float): Modifier = this
+private fun Modifier.topFade(heightPx: () -> Float): Modifier = this
     .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
     .drawWithContent {
         drawContent()
-        if (heightPx <= 0f) return@drawWithContent
+        val height = heightPx()
+        if (height <= 0f) return@drawWithContent
         inset(
             left = 0f,
             top = 0f,
             right = 0f,
-            bottom = (size.height - heightPx).coerceAtLeast(0f)
+            bottom = (size.height - height).coerceAtLeast(0f)
         ) {
             drawRect(
-                brush = Brush.verticalGradient(0f to Color.Black, 1f to Color.Transparent),
+                brush = TopFadeBrush,
                 blendMode = BlendMode.DstOut
             )
         }
     }
+
+/** 顶部渐隐使用的固定渐变 */
+private val TopFadeBrush = Brush.verticalGradient(0f to Color.Black, 1f to Color.Transparent)

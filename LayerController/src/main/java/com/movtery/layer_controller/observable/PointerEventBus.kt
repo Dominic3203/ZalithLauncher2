@@ -76,11 +76,6 @@ class PointerEventBus {
     }
 
     /**
-     * 获取活跃控件快照
-     */
-    fun snapshot(pointerId: PointerId): List<ObservableWidget> = activeWidgets(pointerId)
-
-    /**
      * 替换指定指针的活跃控件列表
      */
     fun setActiveWidgets(pointerId: PointerId, widgets: List<ObservableWidget>) {

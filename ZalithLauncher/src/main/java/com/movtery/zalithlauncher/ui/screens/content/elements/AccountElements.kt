@@ -86,6 +86,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Transparent
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -157,6 +158,8 @@ import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
 import com.movtery.zalithlauncher.utils.logging.Logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -266,15 +269,27 @@ fun PlayerFace(
     val context = LocalContext.current
     val density = LocalDensity.current
     val refreshWardrobe by AccountsManager.refreshWardrobe.collectAsStateWithLifecycle()
-    val avatarBitmap = remember(account, refreshKey, refreshWardrobe, density) {
-        getSkinAvatarFromAccount(context, account, avatarSize, density).asImageBitmap()
+    val avatarBitmap by produceState<ImageBitmap?>(null, account, refreshKey, refreshWardrobe, density) {
+        value = withContext(Dispatchers.IO) {
+            getSkinAvatarFromAccount(
+                context = context,
+                account = account,
+                size = avatarSize,
+                density = density
+            ).asImageBitmap()
+        }
     }
 
-    Image(
-        modifier = modifier.size(avatarSize),
-        bitmap = avatarBitmap,
-        contentDescription = null
-    )
+    val avatar = avatarBitmap
+    if (avatar != null) {
+        Image(
+            modifier = modifier.size(avatarSize),
+            bitmap = avatar,
+            contentDescription = null
+        )
+    } else {
+        Spacer(modifier = modifier.size(avatarSize))
+    }
 }
 
 @Composable
@@ -1349,23 +1364,25 @@ fun ChangeSkinDialog(
     val previewCape by produceState<ByteArray?>(null, currentCapeToLoad, availableCapes) {
         if (!account.isMicrosoftAccount()) return@produceState
 
-        value = if (currentCapeToLoad != EmptyCape) {
-            // 列表已加载完成才会走到这里
-            runCatching {
-                currentCapeToLoad
-                    .getFile(PathManager.DIR_ACCOUNT_CAPE)
-                    .inputStream()
-                    .use { it.readBytes() }
-            }.getOrNull()
-        } else if (availableCapes == null && account.getCapeFile().exists()) {
-            // 列表就绪前若本地有缓存披风则优先显示，列表加载完或切换时更新 ↑
-            runCatching {
-                account.getCapeFile()
-                    .inputStream()
-                    .use { it.readBytes() }
-            }.getOrNull()
-        } else {
-            null
+        value = withContext(Dispatchers.IO) {
+            if (currentCapeToLoad != EmptyCape) {
+                // 列表已加载完成才会走到这里
+                runCatching {
+                    currentCapeToLoad
+                        .getFile(PathManager.DIR_ACCOUNT_CAPE)
+                        .inputStream()
+                        .use { it.readBytes() }
+                }.getOrNull()
+            } else if (availableCapes == null && account.getCapeFile().exists()) {
+                // 列表就绪前若本地有缓存披风则优先显示，列表加载完或切换时更新 ↑
+                runCatching {
+                    account.getCapeFile()
+                        .inputStream()
+                        .use { it.readBytes() }
+                }.getOrNull()
+            } else {
+                null
+            }
         }
     }
 
@@ -1376,17 +1393,19 @@ fun ChangeSkinDialog(
 
     // 皮肤状态变化时重载预览皮肤
     val previewSkin by produceState<ByteArray?>(null, skinState) {
-        value = when (skinState) {
-            ChangeSkin.None -> account.getSkinFile()
-                .takeIf { it.exists() }
-                ?.inputStream()
-                ?.use { it.readBytes() }
-            is ChangeSkin.ChangeSkinData -> runCatching {
-                skinState.cacheFile
-                    .inputStream()
-                    .use { it.readBytes() }
-            }.getOrNull()
-            ChangeSkin.ResetSkin -> null
+        value = withContext(Dispatchers.IO) {
+            when (skinState) {
+                ChangeSkin.None -> account.getSkinFile()
+                    .takeIf { it.exists() }
+                    ?.inputStream()
+                    ?.use { it.readBytes() }
+                is ChangeSkin.ChangeSkinData -> runCatching {
+                    skinState.cacheFile
+                        .inputStream()
+                        .use { it.readBytes() }
+                }.getOrNull()
+                ChangeSkin.ResetSkin -> null
+            }
         }
     }
     val previewArm = when (skinState) {
@@ -1710,14 +1729,16 @@ fun CapeListItem(
     density: Density,
     onClick: () -> Unit,
 ) {
-    val avatar = remember(cape, density) {
-        if (cape != EmptyCape) {
-            getCapeAvatar(
-                cape = cape,
-                size = size,
-                density = density
-            )?.asImageBitmap()
-        } else null
+    val avatar by produceState<ImageBitmap?>(null, cape, density) {
+        value = withContext(Dispatchers.IO) {
+            if (cape != EmptyCape) {
+                getCapeAvatar(
+                    cape = cape,
+                    size = size,
+                    density = density
+                )?.asImageBitmap()
+            } else null
+        }
     }
 
     Row(
@@ -1731,14 +1752,15 @@ fun CapeListItem(
             onClick = onClick
         )
 
-        if (avatar != null) {
-            val displayWidth = with(density) { avatar.width.toDp() }
-            val displayHeight = with(density) { avatar.height.toDp() }
+        val avatarBitmap = avatar
+        if (avatarBitmap != null) {
+            val displayWidth = with(density) { avatarBitmap.width.toDp() }
+            val displayHeight = with(density) { avatarBitmap.height.toDp() }
             Image(
                 modifier = Modifier
                     .width(displayWidth)
                     .height(displayHeight),
-                bitmap = avatar,
+                bitmap = avatarBitmap,
                 contentDescription = null
             )
 
