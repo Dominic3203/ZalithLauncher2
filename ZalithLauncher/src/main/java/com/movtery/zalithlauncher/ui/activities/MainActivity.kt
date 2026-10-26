@@ -108,6 +108,8 @@ import com.movtery.zalithlauncher.viewmodel.ModpackImportOperation
 import com.movtery.zalithlauncher.viewmodel.ModpackImportViewModel
 import com.movtery.zalithlauncher.viewmodel.ModpackVersionNameOperation
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
+import com.movtery.zalithlauncher.viewmodel.SponsorsDialog
+import com.movtery.zalithlauncher.viewmodel.SponsorsViewModel
 import com.movtery.zalithlauncher.viewmodel.VulkanCheckerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -174,6 +176,11 @@ class MainActivity : BaseAppCompatActivity() {
     val launcherUpgradeViewModel: LauncherUpgradeViewModel by viewModels()
 
     /**
+     * 当月赞助者 ViewModel
+     */
+    private val sponsorsViewModel: SponsorsViewModel by viewModels()
+
+    /**
      * 游戏日志分享菜单 ViewModel
      */
     private val logShareViewModel: LogShareViewModel by viewModels()
@@ -222,6 +229,11 @@ class MainActivity : BaseAppCompatActivity() {
             }
         }
 
+        //拉取当月赞助者数据
+        lifecycleScope.launch {
+            sponsorsViewModel.loadOnStart()
+        }
+
         //错误信息展示
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -254,6 +266,9 @@ class MainActivity : BaseAppCompatActivity() {
                     }
                     is EventViewModel.Event.CheckUpdate -> {
                         checkUpdate()
+                    }
+                    is EventViewModel.Event.ShowSponsors -> {
+                        sponsorsViewModel.openDialog()
                     }
                     is EventViewModel.Event.KeepScreen -> {
                         keepScreen(event.on)
@@ -494,6 +509,9 @@ class MainActivity : BaseAppCompatActivity() {
                     },
                     onLinkClick = { eventViewModel.sendEvent(EventViewModel.Event.OpenLink(it)) }
                 )
+
+                //当月赞助者对话框
+                SponsorsDialog(sponsorsViewModel)
 
                 //版本修改操作流程
                 ModifyVersionOperation(

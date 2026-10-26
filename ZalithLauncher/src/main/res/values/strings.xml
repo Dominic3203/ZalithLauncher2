@@ -2473,6 +2473,14 @@
     <string name="about_launcher_project_link">Project Link</string>
     <!-- Button on the About page opening the sponsorship page; also the title of the sponsorship dialog -->
     <string name="about_sponsor">Sponsorship Support</string>
+    <!-- Item title on the About page opening the monthly sponsors dialog -->
+    <string name="about_sponsors_title">Launcher Sponsors</string>
+    <!-- Description of the sponsors item on the About page and the monthly sponsors dialog; %s is the hardcoded launcher name -->
+    <string name="about_sponsors_summary">Thanks to all the sponsors who support %s</string>
+    <!-- Title of the monthly sponsors dialog -->
+    <string name="sponsors_dialog_title">Sponsors of This Month</string>
+    <!-- Shown in the sponsors dialog when there is no data to display -->
+    <string name="sponsors_empty">No data available</string>
     <!-- Section title of the acknowledgements list on the About page -->
     <string name="about_acknowledgements_title">Acknowledgements</string>
     <!-- Description of the PojavLauncher item in the acknowledgements; %s is the launcher name -->
