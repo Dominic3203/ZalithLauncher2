@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -76,6 +74,7 @@ import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedLazyColumn
 import com.movtery.zalithlauncher.ui.components.TextTransition
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.influencedByBackgroundColor
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
@@ -219,10 +218,10 @@ private fun ModifyVersionContent(
             isVisible = isVisible,
             contentPadding = PaddingValues(all = 12.dp),
             state = scrollState,
-        ) { scope ->
-            animatedItem(scope) { yOffset ->
+        ) {
+            animatedItem { ctx ->
                 MCVersionRow(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     current = originalGameVersion,
                     selected = targetGameVersion,
                     onClick = onSelectGameVersion
@@ -231,9 +230,9 @@ private fun ModifyVersionContent(
 
             // Minecraft 版本变更，给出提示
             if (targetGameVersion != originalGameVersion) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     ModifyTipItem(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         title = stringResource(R.string.versions_modify_mc_changed_title),
                         text = stringResource(R.string.versions_modify_mc_changed_tip)
                     )
@@ -248,18 +247,18 @@ private fun ModifyVersionContent(
                 emptyList()
             }
             if (unrecognizedInstalled.isNotEmpty()) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     ModifyTipItem(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         title = stringResource(R.string.versions_modify_unrecognized_title),
                         text = unrecognizedInstalled.joinToString("、") { "${it.loader.displayName} ${it.version}" }
                     )
                 }
             }
     
-            animatedItem(scope) { yOffset ->
+            animatedItem { ctx ->
                 OptiFineList(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     currentAddon = addonsVM.currentAddon,
                     addonList = addonsVM.addonList,
                     onValueChanged = { addonsVM.updateDiffs() },
@@ -267,9 +266,9 @@ private fun ModifyVersionContent(
                 )
             }
     
-            animatedItem(scope) { yOffset ->
+            animatedItem { ctx ->
                 ForgeList(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     currentAddon = addonsVM.currentAddon,
                     addonList = addonsVM.addonList,
                     onValueChanged = { addonsVM.updateDiffs() },
@@ -278,9 +277,9 @@ private fun ModifyVersionContent(
             }
     
             if (loaderSupports.isNeoForgeSupports) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     NeoForgeList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = addonsVM.currentAddon,
                         addonList = addonsVM.addonList,
                         onValueChanged = { addonsVM.updateDiffs() },
@@ -290,9 +289,9 @@ private fun ModifyVersionContent(
             }
     
             if (loaderSupports.isFabricSupports) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     FabricList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = addonsVM.currentAddon,
                         addonList = addonsVM.addonList,
                         onValueChanged = { addonsVM.updateDiffs() },
@@ -302,9 +301,9 @@ private fun ModifyVersionContent(
             }
     
             if (loaderSupports.isLegacyFabricSupports) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     LegacyFabricList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = addonsVM.currentAddon,
                         addonList = addonsVM.addonList,
                         onValueChanged = { addonsVM.updateDiffs() },
@@ -314,9 +313,9 @@ private fun ModifyVersionContent(
             }
     
             if (loaderSupports.isQuiltSupports) {
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     QuiltList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = addonsVM.currentAddon,
                         addonList = addonsVM.addonList,
                         onValueChanged = { addonsVM.updateDiffs() },
@@ -325,11 +324,11 @@ private fun ModifyVersionContent(
                 }
             }
     
-            animatedItem(scope) { yOffset ->
+            animatedItem { ctx ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        .animated(ctx),
                     horizontalArrangement = Arrangement.End
                 ) {
                     Button(

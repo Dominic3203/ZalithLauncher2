@@ -67,7 +67,6 @@
     <string name="theme_color_picker_title">Seletor de cores</string>
     <string name="theme_color_picker_edit_hex">Editar Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">Hex Inválido</string>
-    <string name="animate_type_bounce">Quicar</string>
     <string name="crash_exit">­Saída</string>
     <string name="crash_link_share_button">Compartilhar Link</string>
     <string name="url_wiki_minecraft_game_snapshot">https://minecraft.wiki/w/Java_Edition_%s</string>
@@ -85,8 +84,6 @@
     <string name="sort_by_last_played">Ordenar por Última vez jogado</string>
     <string name="launcher_version_debug_warning">Você está usando uma versão de testes do %s! Está versão não tem garantia de ser estável no longo prazo. Se você encontrar algum problema nesse ambiente de testes, crie uma nova Issue no GitHub e resolveremos o mais rápido que for possível.</string>
     <string name="launcher_version_debug_warning_cant_close">Este aviso não pode ser ignorado</string>
-    <string name="animate_type_jelly_bounce">Quicada Gelatinosa</string>
-    <string name="animate_type_slice_in">Fatiar em</string>
     <string name="crash_launcher_title">%s encontrou um erro fatal</string>
     <string name="crash_launcher_message">O aplicativo parou de funcionar inesperadamente. Os detalhes do erro abaixo ajudarão os desenvolvedores a melhorar o aplicativo.</string>
     <string name="crash_exit_message">JVM encerrada com o código %d.</string>
@@ -865,11 +862,7 @@
     <string name="settings_launcher_full_screen_title">Modo Tela cheia</string>
     <string name="settings_launcher_full_screen_summary">Coloque as páginas do launcher em tela cheia, ignorando áreas seguras como entalhes e furos na tela</string>
     <string name="settings_launcher_animate_speed_title">Velocidade da animação</string>
-    <string name="settings_launcher_animate_speed_summary">Ajuste o multiplicador de velocidade de reprodução para animações do launcher</string>
-    <string name="settings_launcher_animate_extent_title">Intensidade da animação</string>
-    <string name="settings_launcher_animate_extent_summary">Ajuste a intensidade das animações do launcher</string>
-    <string name="settings_launcher_swap_animate_type_title">Animação de Transição</string>
-    <string name="settings_launcher_swap_animate_type_summary">Escolha a animação de transição de página que melhor se adapta às suas preferências</string>
+    <string name="settings_launcher_animate_speed_summary">Ajusta o multiplicador de velocidade das animações</string>
     <string name="settings_launcher_log_retention_days_title">Dias de retenção de logs</string>
     <string name="settings_launcher_log_retention_days_summary">Defina por quantos dias os logs do launcher devem ser retidos. Logs mais antigos que isso serão excluídos automaticamente</string>
     <string name="settings_launcher_log_share_title">Compartilhar Logs do Launcher</string>

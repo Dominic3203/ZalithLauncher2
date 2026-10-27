@@ -35,7 +35,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -77,7 +76,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
@@ -103,6 +101,7 @@ import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.activities.startEditorActivity
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.AnimatedRow
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
@@ -115,6 +114,7 @@ import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleEditDialog
 import com.movtery.zalithlauncher.ui.components.SingleLineTextCheck
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
 import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
@@ -274,12 +274,12 @@ fun ControlManageScreen(
                 .fillMaxSize()
                 .padding(all = 12.dp),
             isVisible = isVisible
-        ) { scope ->
-            AnimatedItem(scope) { xOffset ->
+        ) {
+            AnimatedItem { ctx ->
                 ControlLayoutList(
                     modifier = Modifier
                         .weight(0.5f)
-                        .offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+                        .animated(ctx, from = AnimatedDirection.Right),
                     dataList = dataList,
                     locale = locale,
                     isLoading = isRefreshing,
@@ -306,11 +306,11 @@ fun ControlManageScreen(
                 )
             }
 
-            AnimatedItem(scope) { xOffset ->
+            AnimatedItem { ctx ->
                 ControlLayoutInfo(
                     modifier = Modifier
                         .weight(0.5f)
-                        .offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+                        .animated(ctx, from = AnimatedDirection.Right),
                     isLoading = isRefreshing,
                     data = selectedLayout,
                     locale = locale,

@@ -82,10 +82,6 @@
     <string name="theme_color_picker_title">顏色選擇器</string>
     <string name="theme_color_picker_edit_hex">編輯 Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">無效 Hex</string>
-    <!--  動畫  -->
-    <string name="animate_type_bounce">彈跳</string>
-    <string name="animate_type_jelly_bounce">回彈</string>
-    <string name="animate_type_slice_in">切入</string>
     <!--  崩潰  -->
     <string name="crash_launcher_title">%s 發生嚴重問題而崩潰</string>
     <string name="crash_launcher_message">應用程式意外崩潰，以下錯誤訊息將協助開發者改進程式。</string>
@@ -989,10 +985,10 @@
     <string name="settings_launcher_language">語言</string>
     <string name="settings_launcher_full_screen_title">頁面全螢幕化</string>
     <string name="settings_launcher_full_screen_summary">使啟動器的頁面全螢幕化，忽略瀏海螢幕、挖孔螢幕等螢幕的安全區域</string>
-    <string name="settings_launcher_animate_speed_title">動畫倍速</string>
-    <string name="settings_launcher_animate_speed_summary">調整啟動器動畫播放時長的倍速</string>
-    <string name="settings_launcher_swap_animate_type_title">頁面切換動畫</string>
-    <string name="settings_launcher_swap_animate_type_summary">根據您的需求，選擇最適合自己的頁面切換動畫</string>
+    <string name="settings_launcher_animate_speed_title">動畫速度</string>
+    <string name="settings_launcher_animate_speed_summary">調整啟動器動畫的速度倍率</string>
+    <string name="settings_launcher_swap_anim_enabled_title">啟用頁面切換動畫</string>
+    <string name="settings_launcher_swap_anim_enabled_summary">切換頁面時，是否播放過渡動畫</string>
     <!--  關於  -->
     <string name="about_launcher_title">關於啟動器</string>
     <string name="about_launcher_version">啟動器版本：%s</string>
@@ -1086,8 +1082,6 @@
     <string name="home_server_card_version_current">當前選擇版本</string>
     <string name="home_server_card_version_specific">特定遊戲版本</string>
     <string name="home_server_card_refresh_failed">重新整理伺服器資訊失敗</string>
-    <string name="settings_launcher_animate_extent_title">動畫強度</string>
-    <string name="settings_launcher_animate_extent_summary">調整啟動器的動畫強度</string>
     <string name="settings_launcher_log_retention_days_title">日誌保留天數</string>
     <string name="settings_launcher_log_retention_days_summary">設置啟動器的日誌保留天數，超過此天數的日誌將被自動刪除</string>
     <string name="settings_launcher_log_share_title">分享啟動器日誌</string>

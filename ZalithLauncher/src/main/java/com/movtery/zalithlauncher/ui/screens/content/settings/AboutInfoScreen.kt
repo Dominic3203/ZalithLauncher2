@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,7 +49,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -70,6 +68,7 @@ import com.movtery.zalithlauncher.path.URL_WEBLATE
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedLazyColumn
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
@@ -96,10 +95,10 @@ fun AboutInfoScreen(
             modifier = Modifier.fillMaxSize(),
             isVisible = isVisible,
             contentPadding = PaddingValues(all = 12.dp)
-        ) { scope ->
-            animatedItem(scope) { yOffset ->
+        ) {
+            animatedItem { ctx ->
                 ChunkLayout(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     title = stringResource(R.string.about_launcher_title)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -137,9 +136,9 @@ fun AboutInfoScreen(
                 }
             }
 
-            animatedItem(scope) { yOffset ->
+            animatedItem { ctx ->
                 ChunkLayout(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     title = stringResource(R.string.about_acknowledgements_title)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -225,9 +224,9 @@ fun AboutInfoScreen(
             }
 
             //额外依赖库板块
-            animatedItem(scope) { yOffset ->
+            animatedItem { ctx ->
                 ChunkLayout(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    modifier = Modifier.animated(ctx),
                     title = stringResource(R.string.about_library_title)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -240,9 +239,9 @@ fun AboutInfoScreen(
 
             //已加载插件板块
             PluginLoader.allPlugins.takeIf { it.isNotEmpty() }?.let { allPlugins ->
-                animatedItem(scope) { yOffset ->
+                animatedItem { ctx ->
                     ChunkLayout(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         title = stringResource(R.string.about_plugin_title)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

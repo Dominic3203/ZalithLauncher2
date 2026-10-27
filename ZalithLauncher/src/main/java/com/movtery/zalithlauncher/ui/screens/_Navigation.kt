@@ -30,8 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.scene.Scene
 import com.movtery.zalithlauncher.setting.AllSettings
-import com.movtery.zalithlauncher.utils.animation.TransitionAnimationType
-import com.movtery.zalithlauncher.utils.animation.getAnimateSpeed
+import com.movtery.zalithlauncher.utils.animation.SwapClock
+import com.movtery.zalithlauncher.utils.animation.SwapTimeline
 import kotlin.reflect.KClass
 
 /**
@@ -111,27 +111,29 @@ fun <E: TitledNavKey> NavBackStack<E>.addIfEmpty(navKey: E) {
 
 @Composable
 fun rememberSwapTween(): FiniteAnimationSpec<Float> {
-    val speed = AllSettings.launcherAnimateSpeed.state
-    return remember(speed) {
-        tween(durationMillis = (getAnimateSpeed() / 5) * 2)
+    val level = AllSettings.launcherAnimateSpeedLevel.state
+    return remember(level) {
+        tween(durationMillis = SwapTimeline.time(SwapTimeline.CONTENT_BASE))
     }
 }
 
+/**
+ * 串行页面切换编排
+ */
 @Composable
 fun <T : Any> rememberTransitionSpec(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform {
-    val type = AllSettings.launcherSwapAnimateType.state
-    val speed = AllSettings.launcherAnimateSpeed.state
-    return remember(type, speed) {
-        val tween: FiniteAnimationSpec<Float> = when (type) {
-            TransitionAnimationType.CLOSE -> snap()
-            else -> tween(durationMillis = (getAnimateSpeed() / 5) * 2)
-        }
+    val level = AllSettings.launcherAnimateSpeedLevel.state
+    return remember(level) {
+        val enterDelay = SwapTimeline.swapTime(SwapTimeline.ENTER_START)
+        val exitDelay = SwapTimeline.swapTime(SwapTimeline.EXIT_WINDOW)
 
-        {
+        val transform: AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
+            SwapClock.record()
             ContentTransform(
-                fadeIn(animationSpec = tween),
-                fadeOut(animationSpec = tween),
+                fadeIn(animationSpec = snap(delayMillis = enterDelay)),
+                fadeOut(animationSpec = snap(delayMillis = exitDelay)),
             )
         }
+        transform
     }
 }

@@ -88,7 +88,7 @@ import com.movtery.zalithlauncher.ui.theme.onBackgroundColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.animation.getAnimateTweenJellyBounce
+import com.movtery.zalithlauncher.utils.animation.getEnterTween
 import java.text.DecimalFormat
 
 /**
@@ -160,7 +160,7 @@ fun MenuSubscreen(
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn() + slideInHorizontally(
-                    animationSpec = getAnimateTweenJellyBounce()
+                    animationSpec = getEnterTween()
                 ) {
                     if (isRtl) -40 else 40
                   },
@@ -224,7 +224,7 @@ fun DualMenuSubscreen(
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn() + slideInHorizontally(
-                    animationSpec = getAnimateTweenJellyBounce()
+                    animationSpec = getEnterTween()
                 ) {
                     if (isRtl) 40 else -40
                   },
@@ -261,7 +261,7 @@ fun DualMenuSubscreen(
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn() + slideInHorizontally(
-                    animationSpec = getAnimateTweenJellyBounce()
+                    animationSpec = getEnterTween()
                 ) {
                     if (isRtl) -40 else 40
                   },

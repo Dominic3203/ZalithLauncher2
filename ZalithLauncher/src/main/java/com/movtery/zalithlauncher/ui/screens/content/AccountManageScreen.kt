@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -54,7 +53,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +69,7 @@ import com.movtery.zalithlauncher.game.account.yggdrasil.PlayerProfile
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.PetModelView
@@ -80,6 +79,8 @@ import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleEditDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListItem
+import com.movtery.zalithlauncher.ui.components.animated
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.AccountItem
 import com.movtery.zalithlauncher.ui.screens.content.elements.AccountOperation
@@ -97,7 +98,6 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.OtherAccountRelogi
 import com.movtery.zalithlauncher.ui.screens.content.elements.OtherLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.OtherServerLoginDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.ServerOperation
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.copyText
 import com.movtery.zalithlauncher.utils.string.getMessageOrToString
 import com.movtery.zalithlauncher.viewmodel.AccountManageEffect
@@ -277,15 +277,11 @@ private fun ActionsLayout(
     currentAccount: Account?,
     actions: AccountActions
 ) {
-    val xOffset by swapAnimateDpAsState(
-        targetValue = (-40).dp,
-        swapIn = isVisible,
-        isHorizontal = true
-    )
+    val ctx = rememberAnimatedContext(isVisible = isVisible)
 
     Column(
         modifier = modifier
-            .offset { IntOffset(x = xOffset.roundToPx(), y = 0) }
+            .animated(ctx, from = AnimatedDirection.Left)
             .fillMaxHeight()
     ) {
         //玩家模型预览
@@ -674,7 +670,7 @@ private fun AccountsLayout(
     accountCapes: Map<String, List<PlayerProfile.Cape>>,
     actions: AccountActions
 ) {
-    val yOffset by swapAnimateDpAsState(targetValue = (-40).dp, swapIn = isVisible)
+    val ctx = rememberAnimatedContext(isVisible = isVisible)
     val context = LocalContext.current
 
     AccountOperation(accountOperation, actions)
@@ -687,7 +683,7 @@ private fun AccountsLayout(
     )
 
     BackgroundCard(
-        modifier = modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+        modifier = modifier.animated(ctx),
         shape = MaterialTheme.shapes.extraLarge
     ) {
         if (accounts.isNotEmpty()) {

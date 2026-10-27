@@ -68,9 +68,6 @@
     <string name="theme_color_picker_title">Renk Seçici</string>
     <string name="theme_color_picker_edit_hex">Hex Kodunu Düzenle</string>
     <string name="theme_color_picker_edit_hex_invalid">Geçersiz Hex</string>
-    <string name="animate_type_bounce">Zıplat</string>
-    <string name="animate_type_jelly_bounce">Yumuşak Zıplat</string>
-    <string name="animate_type_slice_in">Keserek Gir</string>
     <string name="crash_launcher_title">%s kritik bir hata ile karşılaştı</string>
     <string name="crash_launcher_message">Uygulama beklenmedik şekilde kapandı. Aşağıdaki hata detayları geliştiricilere yardımcı olur.</string>
     <string name="crash_exit_message">JVM %d kodu ile kapandı.</string>
@@ -558,10 +555,8 @@
     <string name="settings_launcher_color_theme_summary">Başlatıcı renklerini özelleştir</string>
     <string name="settings_launcher_full_screen_title">Tam Ekran Modu</string>
     <string name="settings_launcher_full_screen_summary">Başlatıcının ekranını tam ekran yapar, çentikli ekranlar ve delikli ekranlar gibi ekran güvenlik alanlarını görmezden gelir</string>
-    <string name="settings_launcher_animate_speed_title">Animasyon Hızı</string>
-    <string name="settings_launcher_animate_speed_summary">Başlatıcının animasyon oynatma süresinin hız çarpanını ayarlayın</string>
-    <string name="settings_launcher_swap_animate_type_title">Geçiş Animasyonu</string>
-    <string name="settings_launcher_swap_animate_type_summary">İhtiyacınıza göre, size en uygun sayfa geçiş animasyonunu seçin</string>
+    <string name="settings_launcher_animate_speed_title">Animasyon hızı</string>
+    <string name="settings_launcher_animate_speed_summary">Animasyon hız çarpanını ayarlayın</string>
     <string name="control_editor_menu_preview_mode_scenario">Önizleme Senaryosu</string>
     <string name="control_editor_menu_preview_mode_in_game">Oyundayken</string>
     <string name="control_editor_menu_preview_mode_in_menu">Menüdeyken</string>
@@ -942,8 +937,6 @@
     <string name="settings_gamepad_remapping_finished_saving">Lütfen bekleyin, başlatıcı kaydedip uyguluyor.</string>
     <string name="settings_gamepad_remapping_finished_saved">Oyun kumandası eşleştirmesi başarıyla kaydedildi. Artık bu iletişim kutusunu kapatabilirsiniz!</string>
     <string name="settings_launcher_dark_mode_title">Karanlık Mod</string>
-    <string name="settings_launcher_animate_extent_title">Genişletilmiş Animasyonlar</string>
-    <string name="settings_launcher_animate_extent_summary">Arayüz geçişlerini güzelleştirir</string>
     <string name="settings_launcher_log_retention_days_title">Günlük Saklama Süresi</string>
     <string name="settings_launcher_log_retention_days_summary">Log dosyalarının kaç gün saklanacağı</string>
     <string name="settings_launcher_log_share_title">Hata Kaydını Paylaş</string>

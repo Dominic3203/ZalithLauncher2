@@ -73,8 +73,6 @@
     <string name="theme_color_picker_edit_hex">Modifica Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">Hex Invalido</string>
     <string name="generic_follow_system">Segui Sistema</string>
-    <string name="animate_type_bounce">Rimbalzo</string>
-    <string name="animate_type_jelly_bounce">Rimbalzo Jelly</string>
     <string name="crash_launcher_title">%s ha incontrato un errore fatale</string>
     <string name="crash_launcher_message">L\'applicazione si è chiusa inaspettatamente. Il dettaglio dell\'errore qui sotto può aiutare gli sviluppatori a migliorare l\'app.</string>
     <string name="crash_exit_message">JVM è uscito con il segnale %d.</string>

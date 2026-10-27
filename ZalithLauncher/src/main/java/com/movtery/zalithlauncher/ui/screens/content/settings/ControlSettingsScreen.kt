@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Icon
@@ -45,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.bridge.CursorShape
@@ -68,6 +66,7 @@ import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.TitleAndSummary
 import com.movtery.zalithlauncher.ui.components.TooltipIconButton
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.infiniteShimmer
 import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.control.gyroscope.isGyroscopeAvailable
@@ -120,12 +119,12 @@ fun ControlSettingsScreen(
                 .verticalScrollWithBar(state = rememberScrollState())
                 .padding(all = 12.dp),
             isVisible = isVisible
-        ) { scope ->
-            AnimatedItem(scope) { yOffset ->
+        ) {
+            AnimatedItem { ctx ->
                 SettingsCardColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                        .animated(ctx)
                 ) {
                     SwitchSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -168,11 +167,11 @@ fun ControlSettingsScreen(
                 }
             }
 
-            AnimatedItem(scope) { yOffset ->
+            AnimatedItem { ctx ->
                 SettingsCardColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                        .animated(ctx)
                 ) {
                     val mouseSize = AllSettings.mouseSize.state
 
@@ -308,11 +307,11 @@ fun ControlSettingsScreen(
                 }
             }
 
-            AnimatedItem(scope) { yOffset ->
+            AnimatedItem { ctx ->
                 SettingsCardColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                        .animated(ctx)
                 ) {
                     SwitchSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -386,11 +385,11 @@ fun ControlSettingsScreen(
                 }
             }
 
-            AnimatedItem(scope) { yOffset ->
+            AnimatedItem { ctx ->
                 SettingsCardColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                        .animated(ctx)
                 ) {
                     SwitchSettingsCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -436,11 +435,11 @@ fun ControlSettingsScreen(
                 }
             }
 
-            AnimatedItem(scope) { yOffset ->
+            AnimatedItem { ctx ->
                 SettingsCardColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                        .animated(ctx)
                 ) {
                     //检查陀螺仪是否可用
                     val context = LocalContext.current

@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,7 +54,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -79,11 +77,14 @@ import com.movtery.zalithlauncher.game.versioninfo.filterRelease
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CheckChip
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.ShimmerBox
 import com.movtery.zalithlauncher.ui.components.SimpleTextInputField
+import com.movtery.zalithlauncher.ui.components.animated
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
@@ -100,7 +101,6 @@ import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.Ve
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.initAll
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.mapWithVersions
 import com.movtery.zalithlauncher.ui.theme.onCardColor
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import io.ktor.client.plugins.ClientRequestException
 import kotlinx.coroutines.CancellationException
@@ -111,8 +111,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlin.time.Duration.Companion.milliseconds
 import org.jackhuang.hmcl.addon.AddonProjectInfo
+import kotlin.time.Duration.Companion.milliseconds
 
 private class DownloadScreenViewModel(
     private val platform: Platform,
@@ -361,12 +361,12 @@ fun DownloadAssetsScreen(
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            val yOffset by swapAnimateDpAsState(targetValue = (-40).dp, swapIn = isVisible)
+            val versionCtx = rememberAnimatedContext(isVisible = isVisible)
             Versions(
                 modifier = Modifier
                     .weight(versionsUIWeight)
                     .fillMaxHeight()
-                    .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    .animated(versionCtx),
                 viewModel = viewModel,
                 installedChecker = installedChecker,
                 onReload = { viewModel.getVersions() },
@@ -388,18 +388,14 @@ fun DownloadAssetsScreen(
                 },
             )
 
-            val xOffset by swapAnimateDpAsState(
-                targetValue = 40.dp,
-                swapIn = isVisible,
-                isHorizontal = true
-            )
+            val projectCtx = rememberAnimatedContext(isVisible = isVisible)
             ProjectInfo(
                 modifier = Modifier
                     .weight(projectUIWeight)
                     .fillMaxHeight()
                     .padding(vertical = 12.dp)
                     .padding(end = 12.dp)
-                    .offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+                    .animated(projectCtx, from = AnimatedDirection.Right),
                 projectResult = viewModel.projectResult,
                 platform = key.platform,
                 projectId = key.projectId,

@@ -88,9 +88,6 @@
     <string name="theme_color_picker_title">เลือกสีจากหน้าจอ</string>
     <string name="theme_color_picker_edit_hex">แก้ไข Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">ค่า Hex ผิดตามลักษณะ</string>
-    <string name="animate_type_bounce">เด้งดึง</string>
-    <string name="animate_type_jelly_bounce">เด้งดึงแบบเยลลี่</string>
-    <string name="animate_type_slice_in">หั่นเข้า</string>
     <string name="crash_launcher_title">%s พบปัญหาระดับชาติ</string>
     <string name="crash_launcher_message">แอปพลิเคชั่นแครชแบบสุดวิสัย ข้อมูลข้อผิดพลาดที่อยู่ด้านล่างนี้ช่วยทำให้นักพัฒนาทำการพัฒนาแอปนี้ได้ดีขึ้น</string>
     <string name="crash_exit_message">Java Virtual Machine ปิดด้วยรหัส %d</string>

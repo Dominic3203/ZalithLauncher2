@@ -59,6 +59,7 @@ fun IntSliderSettingsCard(
     enabled: Boolean = true,
     shorter: Boolean = true,
     fineTuningControl: Boolean = false,
+    valueText: ((Float) -> String)? = null,
     titleStyle: TextStyle = MaterialTheme.typography.titleSmall,
     summaryStyle: TextStyle = MaterialTheme.typography.labelSmall,
     appendContent: @Composable () -> Unit = {},
@@ -102,6 +103,7 @@ fun IntSliderSettingsCard(
                 suffix = suffix,
                 fineTuningControl = fineTuningControl,
                 fineTuningStep = 1f,
+                valueText = valueText,
                 appendContent = appendContent
             )
             previewContent()
@@ -137,6 +139,7 @@ fun IntSliderSettingsCard(
     enabled: Boolean = true,
     shorter: Boolean = true,
     fineTuningControl: Boolean = false,
+    valueText: ((Float) -> String)? = null,
     titleStyle: TextStyle = MaterialTheme.typography.titleSmall,
     summaryStyle: TextStyle = MaterialTheme.typography.labelSmall,
     appendContent: @Composable () -> Unit = {},
@@ -161,6 +164,7 @@ fun IntSliderSettingsCard(
         enabled = enabled,
         shorter = shorter,
         fineTuningControl = fineTuningControl,
+        valueText = valueText,
         titleStyle = titleStyle,
         summaryStyle = summaryStyle,
         appendContent = appendContent,
@@ -184,6 +188,7 @@ fun IntSliderSettingsCard(
     enabled: Boolean = true,
     shorter: Boolean = true,
     fineTuningControl: Boolean = false,
+    valueText: ((Float) -> String)? = null,
     titleStyle: TextStyle = MaterialTheme.typography.titleSmall,
     summaryStyle: TextStyle = MaterialTheme.typography.labelSmall,
     appendContent: @Composable () -> Unit = {},
@@ -208,6 +213,7 @@ fun IntSliderSettingsCard(
         enabled = enabled,
         shorter = shorter,
         fineTuningControl = fineTuningControl,
+        valueText = valueText,
         titleStyle = titleStyle,
         summaryStyle = summaryStyle,
         appendContent = appendContent,

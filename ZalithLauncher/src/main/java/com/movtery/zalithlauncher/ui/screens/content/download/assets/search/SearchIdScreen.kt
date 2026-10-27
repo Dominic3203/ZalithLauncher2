@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,7 +54,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,9 +72,12 @@ import com.movtery.zalithlauncher.game.download.assets.utils.getMcmodTitle
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.OwnOutlinedTextField
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
+import com.movtery.zalithlauncher.ui.components.animated
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
@@ -85,7 +86,6 @@ import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.Pr
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.ResultProjectLayout
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.ScreenshotItemLayout
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.string.isEmptyOrBlank
 import io.ktor.client.plugins.ClientRequestException
@@ -273,13 +273,10 @@ private fun ContentResult(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues()
 ) {
-    val yOffset by swapAnimateDpAsState(
-        targetValue = (-40).dp,
-        swapIn = isVisible
-    )
+    val ctx = rememberAnimatedContext(isVisible = isVisible)
 
     Box(
-        modifier = modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+        modifier = modifier.animated(ctx),
         contentAlignment = Alignment.Center
     ) {
         when (operation) {
@@ -474,14 +471,10 @@ private fun ContentFilter(
     onPlatformChange: (Platform) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val xOffset by swapAnimateDpAsState(
-        targetValue = 40.dp,
-        swapIn = isVisible,
-        isHorizontal = true
-    )
+    val ctx = rememberAnimatedContext(isVisible = isVisible)
 
     Column(
-        modifier = modifier.offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+        modifier = modifier.animated(ctx, from = AnimatedDirection.Right),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -80,7 +79,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -102,7 +100,9 @@ import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleTextInputField
 import com.movtery.zalithlauncher.ui.components.TooltipIconButton
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.fadeEdge
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
@@ -122,7 +122,6 @@ import com.movtery.zalithlauncher.ui.screens.content.versions.layouts.VersionChu
 import com.movtery.zalithlauncher.ui.theme.itemColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.file.FolderFileCounter
 import com.movtery.zalithlauncher.utils.file.formatFileSize
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
@@ -316,16 +315,13 @@ fun ResourcePackManageScreen(
             onRefresh = { viewModel.refresh() }
         )
 
-        val yOffset by swapAnimateDpAsState(
-            targetValue = (-40).dp,
-            swapIn = isVisible
-        )
+        val ctx = rememberAnimatedContext(isVisible = isVisible)
 
         VersionChunkBackground(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(all = 12.dp)
-                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                .animated(ctx),
             paddingValues = PaddingValues()
         ) {
             val operationScope = rememberCoroutineScope()

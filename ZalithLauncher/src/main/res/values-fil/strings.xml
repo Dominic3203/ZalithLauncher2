@@ -80,7 +80,6 @@
     <string name="theme_color_picker_title">Tagapili ng Kulay</string>
     <string name="theme_color_picker_edit_hex">Baguhin ang Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">Di-wastong Hex</string>
-    <string name="animate_type_bounce">Talbog</string>
     <string name="crash_launcher_title">Nakaengkuwentro ng nakamamatay na error si %s</string>
     <string name="crash_launcher_message">Nag-crash ang aplikasyon nang hindi inaasahan. Makakatulong ang mga detalye ng error sa ibaba sa mga developer na pahusayin ang app.</string>
     <string name="crash_exit_message">Lumabas ang JVM na may code %d.</string>

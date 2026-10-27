@@ -88,9 +88,6 @@
     <string name="theme_color_picker_title">색상 선택</string>
     <string name="theme_color_picker_edit_hex">Hex 코드 편집</string>
     <string name="theme_color_picker_edit_hex_invalid">잘못된 Hex 코드입니다</string>
-    <string name="animate_type_bounce">바운스</string>
-    <string name="animate_type_jelly_bounce">젤리 바운스</string>
-    <string name="animate_type_slice_in">슬라이스 인</string>
     <string name="crash_launcher_title">%s에서 치명적인 오류가 발생했습니다</string>
     <string name="crash_launcher_message">애플리케이션이 예기치 않게 종료되었습니다. 아래의 오류 상세 정보는 개발자가 앱을 개선하는 데 도움이 됩니다.</string>
     <string name="crash_exit_message">JVM이 종료 코드 %d번과 함께 종료되었습니다.</string>
@@ -965,8 +962,7 @@
     <string name="settings_launcher_log_share_title">런처 로그 공유</string>
     <string name="settings_launcher_log_retention_days_title">로그 보관일</string>
     <string name="settings_launcher_log_retention_days_summary">런처가 로그를 며칠 동안 보관할지 설정합니다. 설정값보다 오래된 로그는 자동으로 삭제됩니다</string>
-    <string name="settings_launcher_swap_animate_type_title">전환 에니메이션</string>
-    <string name="settings_launcher_animate_speed_title">에니메이션 속도</string>
+    <string name="settings_launcher_animate_speed_title">애니메이션 속도</string>
     <string name="settings_launcher_full_screen_title">전체 화면 모드</string>
     <string name="settings_launcher_language">언어</string>
     <string name="settings_launcher_dark_mode_title">다크 모드</string>

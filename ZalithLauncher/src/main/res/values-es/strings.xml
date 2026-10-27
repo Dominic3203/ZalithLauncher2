@@ -66,9 +66,6 @@
     <string name="theme_color_picker_title">Selector de colores</string>
     <string name="theme_color_picker_edit_hex">Editar Hex</string>
     <string name="theme_color_picker_edit_hex_invalid">Hex inválido</string>
-    <string name="animate_type_bounce">Rebote</string>
-    <string name="animate_type_jelly_bounce">Rebote de jalea</string>
-    <string name="animate_type_slice_in">Deslizar hacia adentro</string>
     <string name="crash_launcher_title">%s ha encontrado un error fatal</string>
     <string name="crash_launcher_message">La aplicación se cerró inesperadamente. El error a continuación ayudará a los desarrolladores a mejorar la aplicación.</string>
     <string name="crash_exit_message">JVM se cerró con el codigo %d.</string>
@@ -831,11 +828,7 @@
     <string name="settings_launcher_full_screen_title">Modo pantalla completa</string>
     <string name="settings_launcher_full_screen_summary">Hacer que las páginas del launcher sean a pantalla completa, ignorando áreas seguras como muescas y perforaciones</string>
     <string name="settings_launcher_animate_speed_title">Velocidad de animación</string>
-    <string name="settings_launcher_animate_speed_summary">Ajustar el multiplicador de velocidad de reproducción para las animaciones del launcher</string>
-    <string name="settings_launcher_animate_extent_title">Intensidad de animación</string>
-    <string name="settings_launcher_animate_extent_summary">Ajustar la intensidad de las animaciones del launcher</string>
-    <string name="settings_launcher_swap_animate_type_title">Animación de transición</string>
-    <string name="settings_launcher_swap_animate_type_summary">Elegir la animación de transición de página que mejor se adapte a tus preferencias</string>
+    <string name="settings_launcher_animate_speed_summary">Ajusta el multiplicador de velocidad de las animaciones</string>
     <string name="settings_launcher_log_retention_days_title">Días de retención de registros</string>
     <string name="settings_launcher_log_retention_days_summary">Establecer cuántos días se deben retener los registros del launcher. Los registros más antiguos que esto se eliminarán automáticamente</string>
     <string name="settings_launcher_log_share_title">Compartir registros del launcher</string>
