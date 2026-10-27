@@ -43,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.nonInteractiveScrollbar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -468,8 +469,11 @@ private fun VersionsLayout(
         swapIn = isVisible
     )
 
-    Box(
-        modifier = modifier.offset { IntOffset(x = 0, y = surfaceYOffset.roundToPx()) }
+    PullToRefreshBox(
+        modifier = modifier.offset { IntOffset(x = 0, y = surfaceYOffset.roundToPx()) },
+        isRefreshing = false,
+        enabled = !isRefreshing,
+        onRefresh = onRefresh
     ) {
         if (isRefreshing) { //版本正在刷新中
             Box(

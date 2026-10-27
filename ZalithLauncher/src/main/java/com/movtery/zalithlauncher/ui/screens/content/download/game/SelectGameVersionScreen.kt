@@ -48,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.nonInteractiveScrollbar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -265,61 +266,68 @@ private fun SelectGameVersionContent(
             .fillMaxSize()
             .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
     ) {
-        when (val state = viewModel.versionState) {
-            is VersionState.Loading -> {
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LinearWavyProgressIndicator(
-                        modifier = Modifier.width(168.dp),
-                        wavelength = 32.dp
-                    )
+        PullToRefreshBox(
+            modifier = Modifier.fillMaxSize(),
+            isRefreshing = false,
+            enabled = viewModel.versionState !is VersionState.Loading,
+            onRefresh = { viewModel.refresh(true) }
+        ) {
+            when (val state = viewModel.versionState) {
+                is VersionState.Loading -> {
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LinearWavyProgressIndicator(
+                            modifier = Modifier.width(168.dp),
+                            wavelength = 32.dp
+                        )
+                    }
                 }
-            }
 
-            is VersionState.Failure -> {
-                Box(Modifier.fillMaxSize()) {
-                    ScalingLabel(
-                        modifier = Modifier.align(Alignment.Center),
-                        text = {
-                            AndroidStringText(
-                                text = androidText(
-                                    R.string.download_game_failed_to_get_versions,
-                                    state.message
+                is VersionState.Failure -> {
+                    Box(Modifier.fillMaxSize()) {
+                        ScalingLabel(
+                            modifier = Modifier.align(Alignment.Center),
+                            text = {
+                                AndroidStringText(
+                                    text = androidText(
+                                        R.string.download_game_failed_to_get_versions,
+                                        state.message
+                                    )
                                 )
-                            )
-                        },
-                        onClick = {
-                            viewModel.refresh(true)
-                        }
-                    )
+                            },
+                            onClick = {
+                                viewModel.refresh(true)
+                            }
+                        )
+                    }
                 }
-            }
 
-            is VersionState.None -> {
-                Column {
-                    VersionHeader(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        versionFilter = viewModel.versionFilter,
-                        onVersionFilterChange = { viewModel.filterWith(it) },
-                        itemContainerColor = cardColor(),
-                        itemContentColor = onCardColor(),
-                        onRefreshClick = {
-                            viewModel.refresh(true)
-                        }
-                    )
+                is VersionState.None -> {
+                    Column {
+                        VersionHeader(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp),
+                            versionFilter = viewModel.versionFilter,
+                            onVersionFilterChange = { viewModel.filterWith(it) },
+                            itemContainerColor = cardColor(),
+                            itemContentColor = onCardColor(),
+                            onRefreshClick = {
+                                viewModel.refresh(true)
+                            }
+                        )
 
-                    VersionList(
-                        modifier = Modifier.weight(1f),
-                        versions = state.versions,
-                        onVersionSelect = onVersionSelect,
-                        openLink = { url ->
-                            eventViewModel.sendEvent(EventViewModel.Event.OpenLink(url))
-                        }
-                    )
+                        VersionList(
+                            modifier = Modifier.weight(1f),
+                            versions = state.versions,
+                            onVersionSelect = onVersionSelect,
+                            openLink = { url ->
+                                eventViewModel.sendEvent(EventViewModel.Event.OpenLink(url))
+                            }
+                        )
+                    }
                 }
             }
         }

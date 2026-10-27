@@ -55,6 +55,7 @@ import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.nonInteractiveScrollbar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -350,83 +351,90 @@ fun SavesManagerScreen(
         ) {
             val operationScope = rememberCoroutineScope()
 
-            when (viewModel.savesState) {
-                is LoadingState.None -> {
-                    val context = LocalContext.current
-                    var savesOperation by remember { mutableStateOf<SavesOperation>(SavesOperation.None) }
-                    fun runProgress(task: () -> Unit) {
-                        operationScope.launch(Dispatchers.IO) {
-                            savesOperation = SavesOperation.Progress
-                            task()
-                            savesOperation = SavesOperation.None
-                            viewModel.refresh()
-                        }
-                    }
-                    SaveOperation(
-                        savesOperation = savesOperation,
-                        savesDir = savesDir,
-                        updateOperation = { savesOperation = it },
-                        quickPlay = { saveName ->
-                            onQuickPlay(version, saveName)
-                        },
-                        renameSave = { saveData, newName ->
-                            runProgress {
-                                saveData.saveFile.renameTo(File(savesDir, newName))
-                            }
-                        },
-                        backupSave = { saveData, name ->
-                            runProgress {
-                                FileUtils.copyDirectory(saveData.saveFile, File(savesDir, name))
-                            }
-                        },
-                        deleteSave = { saveData ->
-                            runProgress {
-                                FileUtils.deleteQuietly(saveData.saveFile)
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = false,
+                enabled = viewModel.savesState !is LoadingState.Loading,
+                onRefresh = viewModel::refresh,
+            ) {
+                when (viewModel.savesState) {
+                    is LoadingState.None -> {
+                        val context = LocalContext.current
+                        var savesOperation by remember { mutableStateOf<SavesOperation>(SavesOperation.None) }
+                        fun runProgress(task: () -> Unit) {
+                            operationScope.launch(Dispatchers.IO) {
+                                savesOperation = SavesOperation.Progress
+                                task()
+                                savesOperation = SavesOperation.None
+                                viewModel.refresh()
                             }
                         }
-                    )
-
-                    SaveCompressOperation(
-                        operation = viewModel.compressOperation,
-                        updateOperation = viewModel::updateCompressOperation
-                    )
-
-                    Column {
-                        SavesActionsHeader(
-                            modifier = Modifier.fillMaxWidth(),
-                            savesFilter = viewModel.savesFilter,
-                            onSavesFilterChange = { viewModel.updateFilter(it) },
-                            supportedSortByEnums = viewModel.supportedSortByEnums,
-                            sortByEnum = viewModel.sortByEnum,
-                            onSortByChanged = { viewModel.updateSortBy(it) },
-                            isAscending = viewModel.isAscending,
-                            onToggleSortOrder = { viewModel.updateSortOrder() },
+                        SaveOperation(
+                            savesOperation = savesOperation,
                             savesDir = savesDir,
-                            swapToDownload = swapToDownload,
-                            refreshSaves = { viewModel.refresh() },
-                            submitError = submitError
-                        )
-
-                        SavesList(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            savesList = viewModel.filteredSaves,
-                            quickPlay = quickPlay,
-                            minecraftVersion = minecraftVersion,
                             updateOperation = { savesOperation = it },
-                            onCompressShare = { saveData ->
-                                viewModel.compressAndShare(saveData, context)
+                            quickPlay = { saveName ->
+                                onQuickPlay(version, saveName)
+                            },
+                            renameSave = { saveData, newName ->
+                                runProgress {
+                                    saveData.saveFile.renameTo(File(savesDir, newName))
+                                }
+                            },
+                            backupSave = { saveData, name ->
+                                runProgress {
+                                    FileUtils.copyDirectory(saveData.saveFile, File(savesDir, name))
+                                }
+                            },
+                            deleteSave = { saveData ->
+                                runProgress {
+                                    FileUtils.deleteQuietly(saveData.saveFile)
+                                }
                             }
                         )
+
+                        SaveCompressOperation(
+                            operation = viewModel.compressOperation,
+                            updateOperation = viewModel::updateCompressOperation
+                        )
+
+                        Column {
+                            SavesActionsHeader(
+                                modifier = Modifier.fillMaxWidth(),
+                                savesFilter = viewModel.savesFilter,
+                                onSavesFilterChange = { viewModel.updateFilter(it) },
+                                supportedSortByEnums = viewModel.supportedSortByEnums,
+                                sortByEnum = viewModel.sortByEnum,
+                                onSortByChanged = { viewModel.updateSortBy(it) },
+                                isAscending = viewModel.isAscending,
+                                onToggleSortOrder = { viewModel.updateSortOrder() },
+                                savesDir = savesDir,
+                                swapToDownload = swapToDownload,
+                                refreshSaves = { viewModel.refresh() },
+                                submitError = submitError
+                            )
+
+                            SavesList(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                savesList = viewModel.filteredSaves,
+                                quickPlay = quickPlay,
+                                minecraftVersion = minecraftVersion,
+                                updateOperation = { savesOperation = it },
+                                onCompressShare = { saveData ->
+                                    viewModel.compressAndShare(saveData, context)
+                                }
+                            )
+                        }
                     }
-                }
-                is LoadingState.Loading -> {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LoadingIndicator()
+                    is LoadingState.Loading -> {
+                        Box(
+                            Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LoadingIndicator()
+                        }
                     }
                 }
             }
