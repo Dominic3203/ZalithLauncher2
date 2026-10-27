@@ -46,6 +46,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -341,32 +342,56 @@ fun LaunchGameOperation(
         }
         is LaunchGameOperation.AccountRelogin -> {
             if (operation.account.isMicrosoftAccount()) {
-                MicrosoftReloginDialog(
-                    onDismissRequest = {
-                        launchGameViewModel.updateOperation(LaunchGameOperation.None)
-                    },
-                    onConfirm = {
-                        launchGameViewModel.updateOperation(LaunchGameOperation.None)
-                        microsoftLogin(
-                            context = activity,
-                            toWeb = navigateToWeb,
-                            backToMain = backToMain,
-                            checkIfInWebScreen = checkIfInWebScreen,
-                            updateOperation = {},
-                            showToast = { text, duration -> eventViewModel.sendToast(text, duration) },
-                            submitError = submitError
-                        ) {
-                            activity.runOnUiThread {
-                                launchGameViewModel.updateOperation(
-                                    LaunchGameOperation.RealLaunch(
-                                        operation.version,
-                                        operation.quickPlay
-                                    )
+                var selectLoginMethod by remember { mutableStateOf(false) }
+
+                val startReloginLogin: (useSystemBrowser: Boolean) -> Unit = { useSystemBrowser ->
+                    launchGameViewModel.updateOperation(LaunchGameOperation.None)
+                    microsoftLogin(
+                        context = activity,
+                        useSystemBrowser = useSystemBrowser,
+                        toWeb = navigateToWeb,
+                        toSystemBrowser = { url ->
+                            eventViewModel.sendEvent(EventViewModel.Event.OpenLink(url))
+                        },
+                        backToMain = backToMain,
+                        checkIfInWebScreen = checkIfInWebScreen,
+                        updateOperation = {},
+                        showToast = { text, duration -> eventViewModel.sendToast(text, duration) },
+                        submitError = submitError
+                    ) {
+                        activity.runOnUiThread {
+                            launchGameViewModel.updateOperation(
+                                LaunchGameOperation.RealLaunch(
+                                    operation.version,
+                                    operation.quickPlay
                                 )
-                            }
+                            )
                         }
                     }
-                )
+                }
+
+                if (selectLoginMethod) {
+                    MicrosoftLoginMethodDialog(
+                        onDismissRequest = {
+                            selectLoginMethod = false
+                        },
+                        onSystemBrowser = {
+                            startReloginLogin(true)
+                        },
+                        onInternalBrowser = {
+                            startReloginLogin(false)
+                        }
+                    )
+                } else {
+                    MicrosoftReloginDialog(
+                        onDismissRequest = {
+                            launchGameViewModel.updateOperation(LaunchGameOperation.None)
+                        },
+                        onConfirm = {
+                            selectLoginMethod = true
+                        }
+                    )
+                }
             } else {
                 OtherAccountReloginDialog(
                     account = operation.account,

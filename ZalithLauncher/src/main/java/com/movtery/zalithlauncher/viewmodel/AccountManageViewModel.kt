@@ -118,7 +118,9 @@ sealed interface AccountManageIntent {
 
     /** 执行微软登录流程 */
     data class PerformMicrosoftLogin(
+        val useSystemBrowser: Boolean,
         val toWeb: (url: String) -> Unit,
+        val toSystemBrowser: (url: String) -> Unit,
         val backToMain: () -> Unit,
         val checkIfInWebScreen: () -> Boolean
     ) : AccountManageIntent
@@ -448,9 +450,11 @@ class AccountManageViewModel @AssistedInject constructor(
     private fun performMicrosoftLogin(intent: AccountManageIntent.PerformMicrosoftLogin) {
         microsoftLogin(
             context,
-            intent.toWeb,
-            intent.backToMain,
-            intent.checkIfInWebScreen,
+            useSystemBrowser = intent.useSystemBrowser,
+            toWeb = intent.toWeb,
+            toSystemBrowser = intent.toSystemBrowser,
+            backToMain = intent.backToMain,
+            checkIfInWebScreen = intent.checkIfInWebScreen,
             { onIntent(AccountManageIntent.UpdateMicrosoftLoginOp(it)) },
             showToast = ::emitToast,
             { emitError(it.title, it.message) }

@@ -1010,6 +1010,12 @@
     <string name="account_delete_title">Delete Account</string>
     <!-- Message in the delete account dialog; %s is the account name -->
     <string name="account_delete_message">Are you sure you want to delete account %s from the launcher?</string>
+    <!-- Content of the dialog asking how to complete the Microsoft sign-in verification -->
+    <string name="account_microsoft_login_method_summary">Adding a Microsoft account requires completing the sign-in verification in a browser. Choose how to open the verification page:</string>
+    <!-- Button in the Microsoft login method dialog that opens the system browser -->
+    <string name="account_microsoft_login_method_system_browser">System Browser (Recommended)</string>
+    <!-- Button in the Microsoft login method dialog that opens the built-in browser -->
+    <string name="account_microsoft_login_method_internal_browser">Built-in Browser</string>
     <!-- Progress message while the device code is being fetched for Microsoft login -->
     <string name="account_microsoft_fetch_device_code">Get Device Code</string>
     <!-- Toast shown after the device code is copied; %s is the code -->

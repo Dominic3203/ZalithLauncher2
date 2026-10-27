@@ -146,6 +146,8 @@ fun WebViewScreen(
                             }
 
                             settings.javaScriptEnabled = true
+                            settings.domStorageEnabled = true
+                            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                             settings.cacheMode = WebSettings.LOAD_NO_CACHE
                             loadUrl(key.url)
                             webViewHolder.value = this

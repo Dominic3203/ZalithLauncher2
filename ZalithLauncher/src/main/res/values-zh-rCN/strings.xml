@@ -548,6 +548,9 @@
     <string name="account_supporting_microsoft_tip_hint_t8">提示：若当前网络状况不佳，可能会导致网页加载缓慢或无法打开。请尝试使用网络代理后重试。</string>
     <string name="account_delete_title">删除账号</string>
     <string name="account_delete_message">您确定要将账号 %s 从启动器内删除吗？</string>
+    <string name="account_microsoft_login_method_summary">添加微软账号需要在浏览器中完成登录验证，请选择打开验证页面的方式：</string>
+    <string name="account_microsoft_login_method_system_browser">系统浏览器（推荐）</string>
+    <string name="account_microsoft_login_method_internal_browser">启动器内置浏览器</string>
     <string name="account_microsoft_fetch_device_code">获取设备码</string>
     <string name="account_microsoft_coped_device_code">已获取并自动复制设备码：%s，稍后请在网页中完成验证。</string>
     <string name="account_microsoft_get_token">轮询中，尝试获取令牌；设备码：%s</string>

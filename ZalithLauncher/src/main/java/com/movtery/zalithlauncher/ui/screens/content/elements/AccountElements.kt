@@ -138,11 +138,14 @@ import com.movtery.zalithlauncher.path.URL_MINECRAFT_PURCHASE
 import com.movtery.zalithlauncher.ui.AndroidStringText
 import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BaseIconTextButton
+import com.movtery.zalithlauncher.ui.components.ButtonPosition
 import com.movtery.zalithlauncher.ui.components.IconTextButton
 import com.movtery.zalithlauncher.ui.components.ImePanContainer
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.OwnOutlinedTextField
 import com.movtery.zalithlauncher.ui.components.PetModelView
+import com.movtery.zalithlauncher.ui.components.PositionButton
+import com.movtery.zalithlauncher.ui.components.PositionFilledTonalButton
 import com.movtery.zalithlauncher.ui.components.RadioCard
 import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListDialog
@@ -184,6 +187,9 @@ sealed interface MicrosoftLoginOperation {
 
     /** 微软账号相关提示Dialog流程 */
     data object Tip : MicrosoftLoginOperation
+
+    /** 选择微软登录验证方式的Dialog流程 */
+    data object SelectBrowser : MicrosoftLoginOperation
 }
 
 /**
@@ -686,6 +692,78 @@ fun MicrosoftLoginTipDialog(
         onCancel = onDismissRequest,
         onDismissRequest = onDismissRequest
     )
+}
+
+@Composable
+fun MicrosoftLoginMethodDialog(
+    onDismissRequest: () -> Unit,
+    onSystemBrowser: () -> Unit,
+    onInternalBrowser: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+    ) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .heightIn(max = rememberDialogMaxHeight())
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .padding(all = 6.dp)
+                    .heightIn(max = (maxHeight - 12.dp).coerceAtMost(rememberDialogMaxHeight()))
+                    .wrapContentHeight(),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = cardColor(false),
+                contentColor = onCardColor(),
+                shadowElevation = 6.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(all = 16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.account_supporting_microsoft_tip_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = stringResource(R.string.account_microsoft_login_method_summary),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        PositionButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            position = ButtonPosition.Top,
+                            onClick = onSystemBrowser
+                        ) {
+                            MarqueeText(text = stringResource(R.string.account_microsoft_login_method_system_browser))
+                        }
+                        PositionFilledTonalButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            position = ButtonPosition.Middle,
+                            onClick = onInternalBrowser
+                        ) {
+                            MarqueeText(text = stringResource(R.string.account_microsoft_login_method_internal_browser))
+                        }
+                        PositionFilledTonalButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            position = ButtonPosition.Bottom,
+                            onClick = onDismissRequest
+                        ) {
+                            MarqueeText(text = stringResource(R.string.generic_cancel))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 private val localNamePattern = Pattern.compile("[^a-zA-Z0-9_]")
