@@ -18,6 +18,7 @@
 
 package com.movtery.zalithlauncher.ui.screens.splash
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,17 +26,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import com.movtery.zalithlauncher.BuildKeys
+import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.components.InstallableItem
 import com.movtery.zalithlauncher.ui.screens.NavStateHost
 import com.movtery.zalithlauncher.ui.screens.NestedNavDisplay
@@ -43,37 +52,69 @@ import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
 import com.movtery.zalithlauncher.ui.theme.onBackgroundColor
 import com.movtery.zalithlauncher.viewmodel.SplashBackStackViewModel
+import kotlinx.coroutines.flow.StateFlow
 
 /**
+ * @param operation 启动页操作状态
  * @param startAllTask 开启全部的解压任务
  * @param unpackItems 解压任务列表
  */
 @Composable
 fun SplashScreen(
+    operation: StateFlow<SplashOperation>,
     startAllTask: () -> Unit,
     unpackItems: List<InstallableItem>,
     screenViewModel: SplashBackStackViewModel
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        TopBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp),
-            contentColor = onBackgroundColor()
-        )
+    val operationState by operation.collectAsStateWithLifecycle()
 
-        NavStateHost(rootKey = screenViewModel.splashScreen) {
-            NavigationUI(
+    when (operationState) {
+        is SplashOperation.Checking,
+        is SplashOperation.Finished -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Image(
+                        modifier = Modifier.size(58.dp),
+                        painter = painterResource(R.drawable.img_launcher),
+                        contentDescription = stringResource(R.string.generic_loading)
+                    )
+                    LinearWavyProgressIndicator(
+                        modifier = Modifier.width(128.dp),
+                        wavelength = 32.dp
+                    )
+                }
+            }
+        }
+        is SplashOperation.Ready,
+        is SplashOperation.Running -> {
+            Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                startAllTask = startAllTask,
-                unpackItems = unpackItems,
-                screenViewModel = screenViewModel
-            )
+                    .fillMaxSize()
+            ) {
+                TopBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp),
+                    contentColor = onBackgroundColor()
+                )
+
+                NavStateHost(rootKey = screenViewModel.splashScreen) {
+                    NavigationUI(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        startAllTask = startAllTask,
+                        unpackItems = unpackItems,
+                        screenViewModel = screenViewModel
+                    )
+                }
+            }
         }
     }
 }
