@@ -126,8 +126,22 @@ sealed interface DataOperation {
     data object Loading : DataOperation
     /** 当月赞助者 */
     data class Result(val data: MonthlySponsors) : DataOperation
+    /** 本月还没有赞助者 */
+    data class NoSponsors(val data: MonthlySponsors) : DataOperation
     /** 拉取失败且没有可展示的数据 */
     data object Empty : DataOperation
+}
+
+private fun toDataOperation(data: MonthlySponsors?): DataOperation = when {
+    data == null -> DataOperation.Empty
+    data.sponsors.isEmpty() -> DataOperation.NoSponsors(data)
+    else -> DataOperation.Result(data)
+}
+
+private fun DataOperation.dataOrNull(): MonthlySponsors? = when (this) {
+    is DataOperation.Result -> data
+    is DataOperation.NoSponsors -> data
+    else -> null
 }
 
 sealed interface SponsorsOperation {
@@ -165,14 +179,9 @@ class SponsorsViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Main) {
             _data.update { DataOperation.Loading }
 
-            val newData = ensureData()
-            if (newData != null) {
-                val result = DataOperation.Result(newData)
-                _data.update { result }
-                checkLastMonthReport(result)
-            } else {
-                _data.update { DataOperation.Empty }
-            }
+            val newData = toDataOperation(ensureData())
+            _data.update { newData }
+            checkLastMonthReport(newData)
         }
     }
 
@@ -185,9 +194,7 @@ class SponsorsViewModel : ViewModel() {
         refreshJob = viewModelScope.launch(Dispatchers.Main) {
             _data.update { DataOperation.Loading }
 
-            val newData = refreshData()?.let { result ->
-                DataOperation.Result(result)
-            } ?: DataOperation.Empty
+            val newData = toDataOperation(refreshData())
 
             _data.update { newData }
             refreshJob = null
@@ -220,8 +227,8 @@ class SponsorsViewModel : ViewModel() {
         _ui.update { SponsorsOperation.None }
     }
 
-    private fun checkLastMonthReport(result: DataOperation.Result) {
-        val lastMonth = result.data.lastMonth
+    private fun checkLastMonthReport(operation: DataOperation) {
+        val lastMonth = operation.dataOrNull()?.lastMonth ?: return
         if (lastMonth.month == AllSettings.lastSponsorReportMonth.getValue()) return
 
         if (lastMonth.list.isEmpty()) {
@@ -317,12 +324,11 @@ fun SponsorsDialog(
     when (ui) {
         SponsorsOperation.None -> {}
         SponsorsOperation.LastMonth -> {
-            when (val operation = data) {
-                is DataOperation.Result -> {
+            when (val report = data.dataOrNull()?.lastMonth) {
+                is LastMonthSponsors -> {
                     val effectClock = rememberSponsorEffectClock()
                     val outsideColor = onCardColor()
 
-                    val report = operation.data.lastMonth
                     LastMonthReportDialog(
                         report = report,
                         effectClock = effectClock,
@@ -390,7 +396,8 @@ fun SponsorsDialog(
                                         CircularProgressIndicator()
                                     }
                                 }
-                                is DataOperation.Empty -> {
+                                is DataOperation.Empty,
+                                is DataOperation.NoSponsors -> {
                                     OperationStatusLayout {
                                         Text(
                                             text = stringResource(R.string.sponsors_empty),
