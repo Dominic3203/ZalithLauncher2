@@ -19,6 +19,7 @@
 package com.movtery.zalithlauncher.viewmodel
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -41,6 +42,8 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -48,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -56,6 +60,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -71,8 +76,14 @@ import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.sponsor.MonthlySponsors
 import com.movtery.zalithlauncher.sponsor.Sponsor
 import com.movtery.zalithlauncher.sponsor.SponsorPlan
+import com.movtery.zalithlauncher.sponsor.SponsorPlanEffect
+import com.movtery.zalithlauncher.sponsor.SponsorUser
+import com.movtery.zalithlauncher.ui.components.SponsorEffectBox
+import com.movtery.zalithlauncher.ui.components.SponsorEffectClock
+import com.movtery.zalithlauncher.ui.components.SponsorText
 import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.components.rememberDialogMaxHeight
+import com.movtery.zalithlauncher.ui.components.rememberSponsorEffectClock
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.upgrade.GithubContentApi
@@ -278,6 +289,8 @@ fun SponsorsDialog(
         SponsorsOperation.None -> {}
         SponsorsOperation.Show -> {
             val data by viewModel.data.collectAsStateWithLifecycle()
+            val dialogBackground = cardColor(false)
+            val outsideColor = onCardColor()
 
             Dialog(
                 onDismissRequest = viewModel::closeDialog,
@@ -297,7 +310,7 @@ fun SponsorsDialog(
                             .fillMaxWidth()
                             .heightIn(max = (maxHeight - 12.dp).coerceAtMost(rememberDialogMaxHeight())),
                         shape = MaterialTheme.shapes.extraLarge,
-                        color = cardColor(false),
+                        color = dialogBackground,
                         contentColor = onCardColor(),
                         shadowElevation = 6.dp
                     ) {
@@ -337,6 +350,7 @@ fun SponsorsDialog(
                                 }
                                 is DataOperation.Result -> {
                                     val state = rememberLazyListState()
+                                    val effectClock = rememberSponsorEffectClock()
                                     LazyColumn(
                                         modifier = Modifier
                                             .fadeEdge(state = state)
@@ -346,7 +360,11 @@ fun SponsorsDialog(
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         items(operation.data.sponsors) { sponsor ->
-                                            SponsorItem(sponsor = sponsor)
+                                            SponsorItem(
+                                                sponsor = sponsor,
+                                                effectClock = effectClock,
+                                                outsideColor = outsideColor
+                                            )
                                         }
                                     }
                                 }
@@ -397,46 +415,64 @@ private fun OperationStatusLayout(
 @Composable
 private fun SponsorItem(
     sponsor: Sponsor,
+    effectClock: SponsorEffectClock,
+    outsideColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+    val effect = remember(sponsor.plan.id) { SponsorPlanEffect.of(sponsor.plan.id) }
+    SponsorEffectBox(
+        effect = effect,
+        clock = effectClock,
+        seed = sponsor.hashCode(),
+        outsideColor = outsideColor,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
     ) {
-        SponsorAvatar(
-            modifier = Modifier.align(Alignment.CenterVertically),
-            avatar = sponsor.user.avatar
-        )
-
-        Column(
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = sponsor.user.name,
-                style = MaterialTheme.typography.bodyMedium
+            SponsorAvatar(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(shape = CircleShape)
+                    .align(Alignment.CenterVertically),
+                avatar = sponsor.user.avatar
             )
-            Text(
-                modifier = Modifier.alpha(0.7f),
-                text = sponsor.time,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
 
-        Column(
-            horizontalAlignment = Alignment.End
-        ) {
-            if (sponsor.plan.name.isNotEmpty()) {
-                Text(
-                    modifier = Modifier.alpha(0.7f),
-                    text = sponsor.plan.name,
-                    style = MaterialTheme.typography.bodySmall
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                SponsorText(
+                    text = sponsor.user.name,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                SponsorText(
+                    text = sponsor.time,
+                    style = MaterialTheme.typography.bodySmall,
+                    alpha = 0.7f
                 )
             }
-            Text(
-                text = sponsorAmountText(sponsor.plan),
-                style = MaterialTheme.typography.bodyMedium
-            )
+
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                if (sponsor.plan.name.isNotEmpty()) {
+                    SponsorText(
+                        text = sponsor.plan.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        alpha = 0.7f
+                    )
+                }
+                SponsorText(
+                    text = sponsorAmountText(sponsor.plan),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }
@@ -446,19 +482,16 @@ private fun SponsorAvatar(
     avatar: String,
     modifier: Modifier = Modifier
 ) {
-    val imageModifier = modifier
-        .size(36.dp)
-        .clip(shape = CircleShape)
     if (avatar.isEmpty()) {
         Image(
-            modifier = imageModifier,
+            modifier = modifier,
             painter = painterResource(R.drawable.ic_unknown_icon),
             contentDescription = null,
             contentScale = ContentScale.Crop
         )
     } else {
         AsyncImage(
-            modifier = imageModifier,
+            modifier = modifier,
             model = avatar,
             contentDescription = null,
             contentScale = ContentScale.Crop,
@@ -496,4 +529,73 @@ private fun sponsorAmountText(plan: SponsorPlan): AnnotatedString {
 
 private fun formatAmount(value: Double): String {
     return String.format(Locale.ROOT, "¥%.2f", value)
+}
+
+private val sponsorPreviewItems = listOf(
+    Sponsor(
+        user = SponsorUser(name = "青蓝", avatar = ""),
+        time = "2026/10/22",
+        plan = SponsorPlan(
+            id = "c1e7e62e",
+            name = "咬过一口的青金石",
+            price = 5.20,
+            totalAmount = 5.20,
+            showAmount = 5.20
+        )
+    ),
+    Sponsor(
+        user = SponsorUser(name = "一位名字特别长的赞助者", avatar = ""),
+        time = "2026/10/23",
+        plan = SponsorPlan(
+            id = "c3a32536",
+            name = "红\uD83D\uDC31帽",
+            price = 10.45,
+            totalAmount = 10.45,
+            showAmount = 10.45
+        )
+    ),
+    Sponsor(
+        user = SponsorUser(name = "令牌", avatar = ""),
+        time = "2026/10/15",
+        plan = SponsorPlan(
+            id = "c4b309b8",
+            name = "闪闪黄金令牌",
+            price = 20.0,
+            totalAmount = 16.0,
+            showAmount = 20.0
+        )
+    ),
+    Sponsor(
+        user = SponsorUser(name = "绿星", avatar = ""),
+        time = "2026/10/24",
+        plan = SponsorPlan(
+            id = "",
+            name = "自选金额",
+            price = 5.0,
+            totalAmount = 5.0,
+            showAmount = 5.0
+        )
+    )
+)
+
+@PreviewLightDark
+@Composable
+private fun SponsorItemsPreview() {
+    MaterialTheme(
+        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+    ) {
+        Surface(color = MaterialTheme.colorScheme.surfaceBright) {
+            val effectClock = rememberSponsorEffectClock()
+            Column(modifier = Modifier.fillMaxWidth()) {
+                sponsorPreviewItems.forEach { sponsor ->
+                    SponsorItem(
+                        sponsor = sponsor,
+                        effectClock = effectClock,
+                        outsideColor = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            }
+        }
+    }
 }
