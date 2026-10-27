@@ -510,8 +510,13 @@ class MainActivity : BaseAppCompatActivity() {
                     onLinkClick = { eventViewModel.sendEvent(EventViewModel.Event.OpenLink(it)) }
                 )
 
-                //当月赞助者对话框
-                SponsorsDialog(sponsorsViewModel)
+                //当月赞助者对话框 / 上月赞助者结算报告
+                SponsorsDialog(
+                    viewModel = sponsorsViewModel,
+                    onSupportClick = {
+                        eventViewModel.sendEvent(EventViewModel.Event.OpenLink(URL_SUPPORT))
+                    }
+                )
 
                 //版本修改操作流程
                 ModifyVersionOperation(

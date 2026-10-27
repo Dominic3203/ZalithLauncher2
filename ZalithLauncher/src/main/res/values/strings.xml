@@ -2481,6 +2481,10 @@
     <string name="sponsors_dialog_title">Sponsors of This Month</string>
     <!-- Shown in the sponsors dialog when there is no data to display -->
     <string name="sponsors_empty">No data available</string>
+    <!-- Title of the last month sponsors settlement dialog -->
+    <string name="sponsors_last_month_title">Last Month\'s Sponsors</string>
+    <!-- Summary of the last month sponsors settlement dialog; %s is the hardcoded launcher name -->
+    <string name="sponsors_last_month_summary">Here are the sponsors who supported %s last month. Thanks for all your support!</string>
     <!-- Section title of the acknowledgements list on the About page -->
     <string name="about_acknowledgements_title">Acknowledgements</string>
     <!-- Description of the PojavLauncher item in the acknowledgements; %s is the launcher name -->
