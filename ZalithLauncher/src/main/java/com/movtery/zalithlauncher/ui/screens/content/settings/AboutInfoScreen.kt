@@ -58,6 +58,7 @@ import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.plugin.ApkPlugin
 import com.movtery.zalithlauncher.game.plugin.PluginLoader
 import com.movtery.zalithlauncher.game.plugin.appCacheIcon
+import com.movtery.zalithlauncher.launcherName
 import com.movtery.zalithlauncher.library.LibraryInfo
 import com.movtery.zalithlauncher.library.libraryData
 import com.movtery.zalithlauncher.path.URL_COMMUNITY
@@ -84,6 +85,7 @@ fun AboutInfoScreen(
     settingsScreenKey: TitledNavKey?,
     mainScreenKey: TitledNavKey?,
     checkUpdate: () -> Unit,
+    onViewSponsors: () -> Unit,
     openLicense: (raw: Int) -> Unit,
     openLink: (url: String) -> Unit
 ) {
@@ -102,6 +104,8 @@ fun AboutInfoScreen(
                     title = stringResource(R.string.about_launcher_title)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val launcherName = remember { launcherName() }
+
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_launcher),
                             title = BuildKeys.LAUNCHER_NAME,
@@ -123,7 +127,7 @@ fun AboutInfoScreen(
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_avatar_movtery),
                             title = stringResource(R.string.about_launcher_author_movtery_title),
-                            text = stringResource(R.string.about_launcher_author_movtery_text, BuildKeys.LAUNCHER_NAME),
+                            text = stringResource(R.string.about_launcher_author_movtery_text, launcherName),
                             button = {
                                 Button(
                                     onClick = { openLink(URL_SUPPORT) }
@@ -142,6 +146,21 @@ fun AboutInfoScreen(
                     title = stringResource(R.string.about_acknowledgements_title)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val launcherName = remember { launcherName() }
+
+                        ButtonIconItem(
+                            icon = painterResource(R.drawable.img_sponsor),
+                            title = stringResource(R.string.about_sponsors_title),
+                            text = stringResource(R.string.about_sponsors_summary, launcherName),
+                            button = {
+                                Button(
+                                    onClick = onViewSponsors
+                                ) {
+                                    Text(text = stringResource(R.string.generic_view))
+                                }
+                            }
+                        )
+
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_avatar_bangbang93),
                             title = "bangbang93",
