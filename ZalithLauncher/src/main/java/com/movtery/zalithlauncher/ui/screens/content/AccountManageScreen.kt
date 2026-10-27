@@ -89,6 +89,7 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.LocalLoginDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.LocalLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.LoginMenuDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.LoginMenuOperation
+import com.movtery.zalithlauncher.ui.screens.content.elements.MicrosoftLoginMethodDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrosoftLoginOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrosoftLoginTipDialog
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrosoftReloginDialog
@@ -401,18 +402,44 @@ private fun MicrosoftLoginOperation(
                 onConfirm = {
                     actions.onIntent(
                         AccountManageIntent.UpdateMicrosoftLoginOp(
+                            MicrosoftLoginOperation.SelectBrowser
+                        )
+                    )
+                },
+                openLink = actions.openLink
+            )
+        }
+        is MicrosoftLoginOperation.SelectBrowser -> {
+            MicrosoftLoginMethodDialog(
+                onDismissRequest = {
+                    actions.onIntent(
+                        AccountManageIntent.UpdateMicrosoftLoginOp(
                             MicrosoftLoginOperation.None
                         )
                     )
+                },
+                onSystemBrowser = {
                     actions.onIntent(
                         AccountManageIntent.PerformMicrosoftLogin(
+                            useSystemBrowser = true,
                             toWeb = actions.navigateToWeb,
+                            toSystemBrowser = actions.openLink,
                             backToMain = actions.backToMainScreen,
                             checkIfInWebScreen = actions.checkIfInWebScreen
                         )
                     )
                 },
-                openLink = actions.openLink
+                onInternalBrowser = {
+                    actions.onIntent(
+                        AccountManageIntent.PerformMicrosoftLogin(
+                            useSystemBrowser = false,
+                            toWeb = actions.navigateToWeb,
+                            toSystemBrowser = actions.openLink,
+                            backToMain = actions.backToMainScreen,
+                            checkIfInWebScreen = actions.checkIfInWebScreen
+                        )
+                    )
+                }
             )
         }
     }
@@ -823,10 +850,8 @@ private fun AccountOperation(
                     onConfirm = {
                         actions.onIntent(AccountManageIntent.UpdateAccountOp(AccountOperation.None))
                         actions.onIntent(
-                            AccountManageIntent.PerformMicrosoftLogin(
-                                toWeb = actions.navigateToWeb,
-                                backToMain = actions.backToMainScreen,
-                                checkIfInWebScreen = actions.checkIfInWebScreen
+                            AccountManageIntent.UpdateMicrosoftLoginOp(
+                                MicrosoftLoginOperation.SelectBrowser
                             )
                         )
                     }

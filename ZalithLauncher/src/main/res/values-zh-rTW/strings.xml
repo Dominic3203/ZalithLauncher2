@@ -494,6 +494,9 @@
     <string name="account_supporting_microsoft_tip_hint_t8">提示：若目前網路狀況不佳，可能會導致網頁載入緩慢或無法開啟。請嘗試使用網路代理後重試。</string>
     <string name="account_delete_title">刪除帳號</string>
     <string name="account_delete_message">您確定要將帳號 %s 從啟動器內刪除嗎？</string>
+    <string name="account_microsoft_login_method_summary">新增 Microsoft 帳號需要在瀏覽器中完成登入驗證，請選擇開啟驗證頁面的方式：</string>
+    <string name="account_microsoft_login_method_system_browser">系統瀏覽器（推薦）</string>
+    <string name="account_microsoft_login_method_internal_browser">啟動器內建瀏覽器</string>
     <string name="account_microsoft_fetch_device_code">獲取裝置代碼</string>
     <string name="account_microsoft_coped_device_code">已獲取並自動複製裝置代碼：%s，稍後請在網頁中完成驗證。</string>
     <string name="account_microsoft_get_token">輪詢中，嘗試獲取權杖；裝置代碼：%s</string>
