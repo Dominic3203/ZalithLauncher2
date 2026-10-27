@@ -137,6 +137,17 @@ fun AboutInfoScreen(
                                 }
                             }
                         )
+                    }
+                }
+            }
+
+            animatedItem(scope) { yOffset ->
+                ChunkLayout(
+                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    title = stringResource(R.string.about_acknowledgements_title)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val launcherName = remember { launcherName() }
 
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_sponsor),
@@ -150,16 +161,7 @@ fun AboutInfoScreen(
                                 }
                             }
                         )
-                    }
-                }
-            }
 
-            animatedItem(scope) { yOffset ->
-                ChunkLayout(
-                    modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
-                    title = stringResource(R.string.about_acknowledgements_title)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         ButtonIconItem(
                             icon = painterResource(R.drawable.img_avatar_bangbang93),
                             title = "bangbang93",
