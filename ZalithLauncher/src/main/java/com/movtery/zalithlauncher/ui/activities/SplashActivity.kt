@@ -40,6 +40,7 @@ import com.movtery.zalithlauncher.components.jre.UnpackJnaTask
 import com.movtery.zalithlauncher.components.jre.UnpackJreTask
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.base.BaseAppCompatActivity
+import com.movtery.zalithlauncher.ui.screens.splash.SplashOperation
 import com.movtery.zalithlauncher.ui.screens.splash.SplashScreen
 import com.movtery.zalithlauncher.ui.theme.ZalithLauncherTheme
 import com.movtery.zalithlauncher.ui.theme.backgroundColor
@@ -48,6 +49,9 @@ import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.viewmodel.SplashBackStackViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,6 +75,9 @@ class SplashActivity : BaseAppCompatActivity() {
 
     private var pendingImportIntent: Intent? = null
 
+    private val _operation = MutableStateFlow<SplashOperation>(SplashOperation.Checking)
+    val operation = _operation.asStateFlow()
+
     private val backStackViewModel: SplashBackStackViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,26 +86,32 @@ class SplashActivity : BaseAppCompatActivity() {
 
         initUnpackItems()
 
+        setContent {
+            ZalithLauncherTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = backgroundColor(),
+                    contentColor = onBackgroundColor()
+                ) {
+                    SplashScreen(
+                        operation = operation,
+                        startAllTask = { startAllTask() },
+                        unpackItems = unpackItems,
+                        screenViewModel = backStackViewModel
+                    )
+                }
+            }
+        }
+
         lifecycleScope.launch(Dispatchers.Main) {
             withContext(Dispatchers.IO) {
                 checkAllTask()
             }
-            if (!checkTasksToMain()) {
-                setContent {
-                    ZalithLauncherTheme {
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = backgroundColor(),
-                            contentColor = onBackgroundColor()
-                        ) {
-                            SplashScreen(
-                                startAllTask = { startAllTask() },
-                                unpackItems = unpackItems,
-                                screenViewModel = backStackViewModel
-                            )
-                        }
-                    }
-                }
+
+            if (checkTasksToMain()) {
+                _operation.update { SplashOperation.Finished }
+            } else {
+                _operation.update { SplashOperation.Ready }
             }
         }
     }
@@ -200,6 +213,8 @@ class SplashActivity : BaseAppCompatActivity() {
     }
 
     private fun startAllTask() {
+        _operation.update { SplashOperation.Running }
+
         lifecycleScope.launch {
             val jobs = unpackItems
                 .filter {
@@ -221,6 +236,8 @@ class SplashActivity : BaseAppCompatActivity() {
                 }
             jobs.joinAll()
         }.invokeOnCompletion {
+            _operation.update { SplashOperation.Finished }
+
             AllSettings.javaRuntime.apply {
                 //检查并设置默认的Java环境
                 if (getValue().isEmpty()) save(Jre.JRE_8.jreName)
