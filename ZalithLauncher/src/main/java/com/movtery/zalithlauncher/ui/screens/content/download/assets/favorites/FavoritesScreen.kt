@@ -81,10 +81,13 @@ import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.model
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.models.modrinthModLoaderFilters
 import com.movtery.zalithlauncher.setting.AllSettings
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
 import com.movtery.zalithlauncher.ui.components.EdgeDirection
 import com.movtery.zalithlauncher.ui.components.OwnOutlinedTextField
 import com.movtery.zalithlauncher.ui.components.TextRailItem
+import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.fadeEdge
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.components.topBarWheelFallback
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
@@ -93,7 +96,6 @@ import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.Fi
 import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.viewmodel.backgroundVisible
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -205,26 +207,22 @@ fun FavoritesScreen(
         }
 
         Row(modifier = Modifier.fillMaxSize()) {
-            val yOffset by swapAnimateDpAsState(targetValue = (-40).dp, swapIn = isVisible)
+            val ctx = rememberAnimatedContext(isVisible = isVisible)
             FavoritesContent(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(7f)
-                    .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    .animated(ctx),
                 viewModel = viewModel,
                 swapToDownload = swapToDownload
             )
 
-            val xOffset by swapAnimateDpAsState(
-                targetValue = 40.dp,
-                swapIn = isVisible,
-                isHorizontal = true
-            )
+            val ctxX = rememberAnimatedContext(isVisible = isVisible)
             FavoritesFilter(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(3f)
-                    .offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+                    .animated(ctxX, from = AnimatedDirection.Right),
                 viewModel = viewModel
             )
         }

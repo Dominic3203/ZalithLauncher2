@@ -53,10 +53,6 @@
     <string name="theme_color_urban_ash">Городской серый</string>
     <string name="theme_color_verdant_dawn">Безмолвный рассвет</string>
     <string name="theme_color_picker_title">Выбор цвета</string>
-    <!-- Animations -->
-    <string name="animate_type_bounce">Подпрыгивающая</string>
-    <string name="animate_type_jelly_bounce">Желейно подпрыгивающая</string>
-    <string name="animate_type_slice_in">Скользящая</string>
     <!-- Crash Handling -->
     <string name="crash_launcher_title">%s столкнулся с критической ошибкой</string>
     <string name="crash_launcher_message">Лаунчер крашнул. Подробности ошибки ниже могут помочь разработчикам улучшить приложение.</string>
@@ -413,11 +409,7 @@
     <string name="settings_launcher_full_screen_title">Полноэкранный режим</string>
     <string name="settings_launcher_full_screen_summary">Сделать страницы лаунчера полноэкранными, игнорируя безопасные области, такие как вырезы под камеру</string>
     <string name="settings_launcher_animate_speed_title">Скорость анимации</string>
-    <string name="settings_launcher_animate_speed_summary">Настройте скорость анимаций в лаунчере</string>
-    <string name="settings_launcher_animate_extent_title">Интенсивность анимации</string>
-    <string name="settings_launcher_animate_extent_summary">Настройте интенсивность анимаций в лаунчере</string>
-    <string name="settings_launcher_swap_animate_type_title">Анимация перехода</string>
-    <string name="settings_launcher_swap_animate_type_summary">Выберите анимацию перехода между страницами</string>
+    <string name="settings_launcher_animate_speed_summary">Настройте множитель скорости анимации</string>
     <!-- About -->
     <string name="about_plugin_title">Загруженные плагины</string>
     <string name="about_library_title">Сторонние библиотеки</string>

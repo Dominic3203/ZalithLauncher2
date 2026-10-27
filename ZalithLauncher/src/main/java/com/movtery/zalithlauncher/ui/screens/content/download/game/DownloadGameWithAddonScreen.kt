@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,7 +48,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -73,6 +71,8 @@ import com.movtery.zalithlauncher.game.version.installed.VersionsManager.isVersi
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedColumn
 import com.movtery.zalithlauncher.ui.components.SimpleTextInputField
+import com.movtery.zalithlauncher.ui.components.animated
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
@@ -81,7 +81,6 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.isFilenameInvalid
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -236,15 +235,12 @@ fun DownloadGameWithAddonScreen(
             Pair(NormalNavKey.DownloadGame.Addons::class.java, downloadGameScreenKey)
         )
     ) { isVisible ->
-        val yOffset by swapAnimateDpAsState(
-            targetValue = (-40).dp,
-            swapIn = isVisible
-        )
+        val animatedCtx = rememberAnimatedContext(isVisible = isVisible)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+                .animated(animatedCtx)
         ) {
             ScreenHeader(
                 modifier = Modifier
@@ -287,21 +283,21 @@ fun DownloadGameWithAddonScreen(
                     .padding(horizontal = 12.dp)
                     .verticalScrollWithBar(state = rememberScrollState()),
                 isVisible = isVisible
-            ) { scope ->
+            ) {
                 Spacer(Modifier)
 
-                AnimatedItem(scope) { yOffset ->
+                AnimatedItem { ctx ->
                     OptiFineList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = viewModel.currentAddon,
                         onValueChanged = { viewModel.refreshIcon() },
                         addonList = viewModel.addonList
                     ) { viewModel.reloadOptiFine() }
                 }
 
-                AnimatedItem(scope) { yOffset ->
+                AnimatedItem { ctx ->
                     ForgeList(
-                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        modifier = Modifier.animated(ctx),
                         currentAddon = viewModel.currentAddon,
                         onValueChanged = { viewModel.refreshIcon() },
                         addonList = viewModel.addonList
@@ -309,14 +305,9 @@ fun DownloadGameWithAddonScreen(
                 }
 
                 if (loaderSupports.isNeoForgeSupports) {
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         NeoForgeList(
-                            modifier = Modifier.offset {
-                                IntOffset(
-                                    x = 0,
-                                    y = yOffset.roundToPx()
-                                )
-                            },
+                            modifier = Modifier.animated(ctx),
                             currentAddon = viewModel.currentAddon,
                             onValueChanged = { viewModel.refreshIcon() },
                             addonList = viewModel.addonList
@@ -325,11 +316,11 @@ fun DownloadGameWithAddonScreen(
                 }
 
                 if (loaderSupports.isFabricSupports) {
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                                .animated(ctx),
                         ) {
                             val isFabricAPIWarning =
                                 viewModel.currentAddon.fabricVersion.value != null &&
@@ -367,14 +358,9 @@ fun DownloadGameWithAddonScreen(
                         }
                     }
 
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         FabricAPIList(
-                            modifier = Modifier.offset {
-                                IntOffset(
-                                    x = 0,
-                                    y = yOffset.roundToPx()
-                                )
-                            },
+                            modifier = Modifier.animated(ctx),
                             currentAddon = viewModel.currentAddon,
                             onValueChanged = { viewModel.refreshIcon() },
                             addonList = viewModel.addonList
@@ -383,11 +369,11 @@ fun DownloadGameWithAddonScreen(
                 }
 
                 if (loaderSupports.isLegacyFabricSupports) {
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                                .animated(ctx),
                         ) {
                             val isFabricAPIWarning =
                                 viewModel.currentAddon.legacyFabricVersion.value != null &&
@@ -425,14 +411,9 @@ fun DownloadGameWithAddonScreen(
                         }
                     }
 
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         LegacyFabricAPIList(
-                            modifier = Modifier.offset {
-                                IntOffset(
-                                    x = 0,
-                                    y = yOffset.roundToPx()
-                                )
-                            },
+                            modifier = Modifier.animated(ctx),
                             currentAddon = viewModel.currentAddon,
                             onValueChanged = { viewModel.refreshIcon() },
                             addonList = viewModel.addonList
@@ -441,11 +422,11 @@ fun DownloadGameWithAddonScreen(
                 }
 
                 if (loaderSupports.isQuiltSupports) {
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                                .animated(ctx),
                         ) {
                             val isQuiltAPIWarning =
                                 viewModel.currentAddon.quiltVersion.value != null &&
@@ -483,14 +464,9 @@ fun DownloadGameWithAddonScreen(
                         }
                     }
 
-                    AnimatedItem(scope) { yOffset ->
+                    AnimatedItem { ctx ->
                         QuiltAPIList(
-                            modifier = Modifier.offset {
-                                IntOffset(
-                                    x = 0,
-                                    y = yOffset.roundToPx()
-                                )
-                            },
+                            modifier = Modifier.animated(ctx),
                             currentAddon = viewModel.currentAddon,
                             onValueChanged = { viewModel.refreshIcon() },
                             addonList = viewModel.addonList

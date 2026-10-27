@@ -71,9 +71,6 @@
     <string name="crash_type_launcher">ランチャークラッシュ</string>
     <string name="crash_type_game">ゲームクラッシュ</string>
     <string name="theme_color_picker_title">カラーピッカー</string>
-    <string name="animate_type_bounce">跳ねる</string>
-    <string name="animate_type_jelly_bounce">弾む</string>
-    <string name="animate_type_slice_in">切り込む</string>
     <string name="crash_launcher_title">%s 致命的な問題が発生しました</string>
     <string name="crash_launcher_message">アプリケーションが予期せずクラッシュしました。以下のエラー情報は、開発者がアプリの改善をするのに役立ちます。</string>
     <string name="crash_exit_message">JVMがコード %d で終了しました。</string>
@@ -400,7 +397,7 @@
     <string name="about_acknowledgements_hmcl_text">%s はHMCLのコードを組み込みその実装の一部を参照しています</string>
     <string name="control_keyboard_bind_summary">キーボードで割り当てたいキーを入力</string>
     <string name="settings_launcher_log_share_title">ランチャーログを共有</string>
-    <string name="settings_launcher_animate_speed_title">アニメーションの速度</string>
+    <string name="settings_launcher_animate_speed_title">アニメーション速度</string>
     <string name="settings_launcher_log_share_summary">タップしてランチャーのログファイルを共有すれば、開発者がランチャーの問題を特定して修正できます</string>
     <string name="settings_game_auto_pick_java_runtime_title">Javaの自動選択</string>
     <string name="settings_renderer_vulkan_driver_system_title">システムVulkanドライバーを使用</string>
@@ -570,7 +567,6 @@
     <string name="control_editor_exit_message">直接退出しますか？変更は保存されません。保存が必要な場合は、エディターメニューを確認してください。</string>
     <string name="control_editor_exit_confirm">直接退出</string>
     <string name="settings_control_gyroscope_invert_y_summary">有効にすると、デバイスを上か下に回転させたらカメラが反対方向に動きます</string>
-    <string name="settings_launcher_swap_animate_type_title">ページ切り替えアニメーション</string>
     <string name="versions_manage_game_path_edit_title">このフォルダに命名</string>
     <string name="versions_manage_game_path_delete_title">ゲームフォルダを削除</string>
     <string name="multirt_runtime_deleting">Javaランタイムを削除: %s</string>
@@ -777,10 +773,7 @@
     <string name="settings_launcher_log_share_packing">ランチャーのログファイルのパッケージ</string>
     <string name="settings_launcher_log_retention_days_summary">ランチャーのログファイルを保持する日数を設定します。この日数より古いログは自動で削除されます</string>
     <string name="settings_launcher_log_retention_days_title">ログの保持日数</string>
-    <string name="settings_launcher_swap_animate_type_summary">好みに合わせてページの推移アニメーションを選択してください</string>
-    <string name="settings_launcher_animate_extent_summary">ランチャーのアニメーションの幅を設定します</string>
-    <string name="settings_launcher_animate_extent_title">アニメーションの幅</string>
-    <string name="settings_launcher_animate_speed_summary">ランチャーアニメーションの再生速度の乗数を設定します</string>
+    <string name="settings_launcher_animate_speed_summary">アニメーションの速度倍率を調整します</string>
     <string name="settings_launcher_full_screen_summary">ノッチやパンチホールなどの領域を無視して、ランチャーのページを全画面に表示します</string>
     <string name="settings_renderer_sustained_performance_title">継続的なパフォーマンスモード</string>
     <string name="settings_renderer_sustained_performance_summary">有効にしたら、システムはゲームに対してより安定したパフォーマンスを出し、長時間のプレイに適していますが、発熱を防ぐためにデバイスの応答速度がわずかに低下する可能性があります</string>

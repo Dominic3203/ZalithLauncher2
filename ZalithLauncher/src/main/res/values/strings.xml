@@ -15,6 +15,9 @@
      and should be concise (aim for 100 characters or less).
   4. Do not add comments above generic_* strings or translatable="false"
      strings; they are kept uncommented by convention.
+  5. When removing a <string>, delete its context comment above it as well,
+     and clean up any group comments whose section has become empty. This
+     applies to every translated strings.xml, not only this source file.
 -->
 <resources>
     <string name="generic_cancel">Cancel</string>
@@ -142,12 +145,6 @@
     <string name="theme_color_picker_edit_hex">Edit Hex</string>
     <!-- Error shown in the color picker when the entered hex code is invalid -->
     <string name="theme_color_picker_edit_hex_invalid">Invalid Hex</string>
-    <!-- Option of the screen transition animation setting in launcher settings -->
-    <string name="animate_type_bounce">Bounce</string>
-    <!-- Option of the screen transition animation setting in launcher settings -->
-    <string name="animate_type_jelly_bounce">Jelly Bounce</string>
-    <!-- Option of the screen transition animation setting in launcher settings -->
-    <string name="animate_type_slice_in">Slice In</string>
     <!-- Title on the crash screen when the launcher itself crashed; %s is the launcher name -->
     <string name="crash_launcher_title">%s has encountered a fatal error</string>
     <!-- Body text on the launcher crash screen shown above the error details -->
@@ -2074,15 +2071,11 @@
     <!-- Title of the animation speed slider in Launcher settings -->
     <string name="settings_launcher_animate_speed_title">Animation Speed</string>
     <!-- Description of the animation speed setting in Launcher settings -->
-    <string name="settings_launcher_animate_speed_summary">Adjust the playback speed multiplier for launcher animations</string>
-    <!-- Title of the animation intensity slider in Launcher settings -->
-    <string name="settings_launcher_animate_extent_title">Animation Intensity</string>
-    <!-- Description of the animation intensity setting in Launcher settings -->
-    <string name="settings_launcher_animate_extent_summary">Adjust the intensity of the launcher animations</string>
-    <!-- Title of the page transition animation picker in Launcher settings -->
-    <string name="settings_launcher_swap_animate_type_title">Transition Animation</string>
-    <!-- Description of the page transition animation setting -->
-    <string name="settings_launcher_swap_animate_type_summary">Choose the page transition animation that best suits your preferences</string>
+    <string name="settings_launcher_animate_speed_summary">Adjust the global animation speed multiplier</string>
+    <!-- Title of the page transition animation toggle in Launcher settings -->
+    <string name="settings_launcher_swap_anim_enabled_title">Enable page transition animation</string>
+    <!-- Description of the page transition animation toggle -->
+    <string name="settings_launcher_swap_anim_enabled_summary">Whether to play transition animations when switching pages</string>
     <!-- Title of the log retention days slider in Launcher settings -->
     <string name="settings_launcher_log_retention_days_title">Log Retention Days</string>
     <!-- Description of the log retention days setting in Launcher settings -->

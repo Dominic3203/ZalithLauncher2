@@ -61,9 +61,6 @@
     <string name="theme_color_urban_ash">Xám lạnh</string>
     <string name="theme_color_verdant_dawn">Xám xanh</string>
     <string name="theme_color_picker_title">Tùy chọn màu</string>
-    <string name="animate_type_bounce">Nảy vào</string>
-    <string name="animate_type_jelly_bounce">Nảy</string>
-    <string name="animate_type_slice_in">Nhảy vào</string>
     <string name="crash_launcher_title">%s đã gặp một lỗi nghiêm trọng</string>
     <string name="crash_launcher_message">Ứng dụng đã bị đóng một cách bất ngờ. Những dòng nhật kí trò chơi phía dưới sẽ giúp các dev cải thiện app.</string>
     <string name="crash_exit_message">JVM đã đóng với mã %d.</string>
@@ -580,12 +577,8 @@
     <string name="settings_launcher_color_theme_summary">Chọn màu cho launcher</string>
     <string name="settings_launcher_full_screen_title">Launcher toàn màn hình</string>
     <string name="settings_launcher_full_screen_summary">Kéo căng launcher ra toàn màn hình</string>
-    <string name="settings_launcher_animate_speed_title">Tốc độ animation</string>
-    <string name="settings_launcher_animate_speed_summary">Tốc độ chạy animation</string>
-    <string name="settings_launcher_animate_extent_title">Mức độ animation</string>
-    <string name="settings_launcher_animate_extent_summary">Độ mạnh của animation</string>
-    <string name="settings_launcher_swap_animate_type_title">Hiệu ứng chuyển trang</string>
-    <string name="settings_launcher_swap_animate_type_summary">Chọn hiệu ứng chuyển trang</string>
+    <string name="settings_launcher_animate_speed_title">Tốc độ hoạt ảnh</string>
+    <string name="settings_launcher_animate_speed_summary">Điều chỉnh hệ số tốc độ hoạt ảnh</string>
     <string name="settings_launcher_log_retention_days_title">Ngày giữ log</string>
     <string name="generic_all">Tất cả</string>
     <string name="versions_manage_category_vanilla">Bản gốc</string>

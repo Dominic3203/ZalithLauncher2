@@ -30,6 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
+import com.movtery.zalithlauncher.utils.animation.SwapClock
+import com.movtery.zalithlauncher.utils.animation.SwapTimeline
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 单层级基础屏幕，根据 `currentKey` 判断当前屏幕是否可见
@@ -53,6 +57,8 @@ fun BaseScreen(
 
     //仅在 composition 完成后，才允许更新可见状态
     LaunchedEffect(targetVisible) {
+        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
+        if (targetVisible) awaitEnterStart()
         visibleState.value = targetVisible
     }
 
@@ -82,6 +88,8 @@ fun BaseScreen(
 
     //仅在 composition 完成后，才允许更新可见状态
     LaunchedEffect(targetVisible) {
+        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
+        if (targetVisible) awaitEnterStart()
         visibleState.value = targetVisible
     }
 
@@ -115,6 +123,8 @@ fun BaseScreen(
 
     //仅在 composition 完成后，才允许更新可见状态
     LaunchedEffect(targetVisible) {
+        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
+        if (targetVisible) awaitEnterStart()
         visibleState.value = targetVisible
     }
 
@@ -122,6 +132,11 @@ fun BaseScreen(
         content = content,
         visible = visibleState.value
     )
+}
+
+private suspend fun awaitEnterStart() {
+    val waitMillis = SwapTimeline.swapTime(SwapTimeline.ENTER_START) - SwapClock.millisSinceLastSwap()
+    if (waitMillis > 0) delay(waitMillis.milliseconds)
 }
 
 @Composable

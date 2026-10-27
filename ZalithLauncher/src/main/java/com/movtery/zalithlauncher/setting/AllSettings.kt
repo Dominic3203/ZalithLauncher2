@@ -45,7 +45,7 @@ import com.movtery.zalithlauncher.ui.control.mouse.CENTER_HOTSPOT
 import com.movtery.zalithlauncher.ui.control.mouse.CursorHotspot
 import com.movtery.zalithlauncher.ui.control.mouse.LEFT_TOP_HOTSPOT
 import com.movtery.zalithlauncher.ui.theme.ColorThemeType
-import com.movtery.zalithlauncher.utils.animation.TransitionAnimationType
+
 
 object AllSettings : SettingsRegistry() {
     //Renderer
@@ -403,19 +403,14 @@ object AllSettings : SettingsRegistry() {
     val launcherFestivalEffects = boolSetting("launcherFestivalEffects", true)
 
     /**
-     * 动画倍速
+     * 启用页面切换动画
      */
-    val launcherAnimateSpeed = intSetting("launcherAnimateSpeed", 5, 0..10)
+    val launcherSwapAnimEnabled = boolSetting("launcherSwapAnimEnabled", true)
 
     /**
-     * 动画幅度
+     * 动画速度
      */
-    val launcherAnimateExtent = intSetting("launcherAnimateExtent", 5, 0..10)
-
-    /**
-     * 启动器页面切换动画类型
-     */
-    val launcherSwapAnimateType = enumSetting("launcherSwapAnimateType", TransitionAnimationType.JELLY_BOUNCE)
+    val launcherAnimateSpeedLevel = intSetting("launcherAnimateSpeedLevel", 10, 1..30)
 
     /**
      * 主界面操作菜单的停泊侧

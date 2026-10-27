@@ -21,7 +21,6 @@ package com.movtery.zalithlauncher.ui.screens.content.download.assets.search
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,13 +50,15 @@ import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersion
 import com.movtery.zalithlauncher.game.versioninfo.MinecraftVersions
 import com.movtery.zalithlauncher.game.versioninfo.popularVersions
 import com.movtery.zalithlauncher.ui.base.BaseScreen
+import com.movtery.zalithlauncher.ui.components.AnimatedDirection
+import com.movtery.zalithlauncher.ui.components.animated
+import com.movtery.zalithlauncher.ui.components.rememberAnimatedContext
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.AssetsPage
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.ResultListLayout
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.SearchAssetsState
 import com.movtery.zalithlauncher.ui.screens.content.download.assets.elements.SearchFilter
-import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.logging.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -296,12 +296,12 @@ fun SearchAssetsScreen(
         Triple(screenKey, currentKey, false)
     ) { isVisible ->
         Row {
-            val yOffset by swapAnimateDpAsState(targetValue = (-40).dp, swapIn = isVisible)
+            val resultCtx = rememberAnimatedContext(isVisible = isVisible)
             ResultListLayout(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(7f)
-                    .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                    .animated(resultCtx),
                 classes = platformClasses,
                 searchState = viewModel.searchResult,
                 onReload = {
@@ -356,18 +356,14 @@ fun SearchAssetsScreen(
                 }
             )
 
-            val xOffset by swapAnimateDpAsState(
-                targetValue = 40.dp,
-                swapIn = isVisible,
-                isHorizontal = true
-            )
+            val filterCtx = rememberAnimatedContext(isVisible = isVisible)
             val searchedMcMods by viewModel.searchedMcMods.collectAsStateWithLifecycle()
             val searchedVersions by viewModel.searchedVersions.collectAsStateWithLifecycle()
             SearchFilter(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(3f)
-                    .offset { IntOffset(x = xOffset.roundToPx(), y = 0) },
+                    .animated(filterCtx, from = AnimatedDirection.Right),
                 contentPadding = PaddingValues(top = 12.dp, bottom = 12.dp, end = 12.dp),
                 enablePlatform = enablePlatform,
                 searchPlatform = viewModel.searchPlatform,

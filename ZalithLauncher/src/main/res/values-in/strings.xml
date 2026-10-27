@@ -55,9 +55,6 @@
     <string name="theme_color_verdant_field">Hijau Senja</string>
     <string name="theme_color_urban_ash">Urban Ash</string>
     <string name="theme_color_picker_title">Pemilihan Warna</string>
-    <string name="animate_type_bounce">Melambung</string>
-    <string name="animate_type_jelly_bounce">Melambung (Jeli)</string>
-    <string name="animate_type_slice_in">Memotong</string>
     <string name="crash_launcher_title">%sTerjadi kesalahan fatal</string>
     <string name="crash_launcher_message">Aplikasi ini tiba-tiba crash. Rincian kesalahan di bawah ini akan membantu pengembang memperbaiki aplikasi.</string>
     <string name="crash_exit_message">JVM keluar dengan kode %d.</string>
@@ -623,15 +620,11 @@
     <string name="settings_launcher_color_theme_title">Tema Warna</string>
     <string name="settings_launcher_color_theme_summary">Sesuaikan warna launcher</string>
     <string name="settings_launcher_full_screen_summary">Buat halaman launcher jadi layar penuh, mengabaikan area aman seperti notch dan punch-hole</string>
-    <string name="settings_launcher_animate_speed_title">Kecepatan Animasi</string>
-    <string name="settings_launcher_swap_animate_type_title">Animasi Transisi</string>
-    <string name="settings_launcher_swap_animate_type_summary">Pilih animasi transisi yang paling cocok sama preferensi kamu</string>
+    <string name="settings_launcher_animate_speed_title">Kecepatan animasi</string>
     <string name="settings_launcher_log_retention_days_title">Durasi Penyimpanan Log</string>
     <string name="settings_launcher_log_retention_days_summary">Atur berapa hari log launcher harus disimpan. Log yang lebih lama dari ini bakal dihapus otomatis</string>
     <string name="settings_launcher_log_share_title">Bagikan Log Launcher</string>
-    <string name="settings_launcher_animate_speed_summary">Atur kecepatan animasi launcher</string>
-    <string name="settings_launcher_animate_extent_title">Intensitas Animasi</string>
-    <string name="settings_launcher_animate_extent_summary">Atur intensitas animasi launcher</string>
+    <string name="settings_launcher_animate_speed_summary">Atur pengganda kecepatan animasi</string>
     <string name="settings_launcher_mirror_official">Gunakan sumber resmi sedapat mungkin</string>
     <string name="settings_launcher_mirror_mirror">Gunakan sumber mirror sedapat mungkin</string>
     <string name="control_keyboard_bind_title">Ikat Tombol</string>

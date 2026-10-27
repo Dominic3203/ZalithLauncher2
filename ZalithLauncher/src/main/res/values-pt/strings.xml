@@ -31,7 +31,6 @@
     <string name="theme_color_embermire">Pântano de brasas</string>
     <string name="theme_color_mistwave">Onda nebular</string>
     <string name="theme_color_glacier">Geleira</string>
-    <string name="animate_type_bounce">Quicar</string>
     <string name="crash_restart">Reiniciar</string>
     <string name="crash_exit">Sair</string>
     <string name="splash_screen_agree">Instalar</string>
@@ -151,8 +150,6 @@
     <string name="theme_color_urban_ash">Cinzas urbanas</string>
     <string name="theme_color_verdant_dawn">Amanhecer verdejante</string>
     <string name="theme_color_picker_title">Seletor de cores</string>
-    <string name="animate_type_jelly_bounce">Salto gelatinoso</string>
-    <string name="animate_type_slice_in">Deslizar</string>
     <string name="crash_launcher_title">%s encontrou um erro fatal</string>
     <string name="crash_launcher_message">O aplicativo travou inesperadamente. Os detalhes do erro abaixo ajudarão os desenvolvedores a melhorar o aplicativo.</string>
     <string name="crash_exit_message">A JVM saiu com o código %d.</string>
@@ -592,9 +589,7 @@
     <string name="settings_control_gesture_long_press_action_summary">Seleciona a ação do botão do mouse quando um toque longo na tela é feito</string>
     <string name="settings_launcher_color_theme_summary">Personaliza as cores do launcher</string>
     <string name="settings_launcher_full_screen_summary">O launcher ficará em tela cheia, ignorando as bordas da tela</string>
-    <string name="settings_launcher_animate_speed_summary">Ajusta o multiplicador de velocidade para as animações do launcher</string>
-    <string name="settings_launcher_animate_extent_summary">Ajusta a intensidade das animações do launcher</string>
-    <string name="settings_launcher_swap_animate_type_summary">Escolhe a animação de transição das páginas</string>
+    <string name="settings_launcher_animate_speed_summary">Ajusta o multiplicador de velocidade das animações</string>
     <string name="settings_launcher_log_retention_days_summary">Define quantos dias os registros do launcher serão preservados. Arquivos mais antigos que o tempo definido serão automaticamente apagados</string>
     <string name="settings_launcher_log_share_summary">Toque para compartilhar os arquivos de registro para que os desenvolvedores possam identificar e resolver os problemas do launcher</string>
     <string name="control_keyboard_bind_summary">Pressione a tecla que deseje vincular</string>
@@ -619,8 +614,6 @@
     <string name="settings_launcher_color_theme_title">Cor do tema</string>
     <string name="settings_launcher_full_screen_title">Modo de ecrã cheio</string>
     <string name="settings_launcher_animate_speed_title">Velocidade da animação</string>
-    <string name="settings_launcher_animate_extent_title">Intensidade da animação</string>
-    <string name="settings_launcher_swap_animate_type_title">Transição da animação</string>
     <string name="settings_launcher_log_retention_days_title">Tempo de retenção do registro</string>
     <string name="settings_launcher_log_share_title">Compartilhar registros do launcher</string>
     <string name="settings_launcher_log_share_packing">Arquivos de registro do inicializador de pacotes</string>
