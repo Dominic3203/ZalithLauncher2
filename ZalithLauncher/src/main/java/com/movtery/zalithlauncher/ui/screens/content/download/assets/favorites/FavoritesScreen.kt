@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -159,7 +160,7 @@ private class FavoritesScreenViewModel : ViewModel() {
         }
     }
 
-    fun onScreenEntered() {
+    fun reload() {
         viewModelScope.launch {
             //先完成数据同步，再基于最新数据池刷新远端数据
             FavoriteProjectsRepository.reload()
@@ -200,7 +201,7 @@ fun FavoritesScreen(
     ) { isVisible ->
         //每进入一次屏幕，重载收藏数据并刷新远端数据
         LaunchedEffect(Unit) {
-            viewModel.onScreenEntered()
+            viewModel.reload()
         }
 
         Row(modifier = Modifier.fillMaxSize()) {
@@ -239,7 +240,11 @@ private fun FavoritesContent(
     val repositoryLoaded = FavoriteProjectsRepository.initialized
     val repositoryEmpty = FavoriteProjectsRepository.projects.isEmpty()
 
-    Box(modifier = modifier) {
+    PullToRefreshBox(
+        modifier = modifier,
+        isRefreshing = false,
+        onRefresh = viewModel::reload,
+    ) {
         if (!repositoryLoaded) {
             //收藏数据装载中
         } else if (repositoryEmpty) {

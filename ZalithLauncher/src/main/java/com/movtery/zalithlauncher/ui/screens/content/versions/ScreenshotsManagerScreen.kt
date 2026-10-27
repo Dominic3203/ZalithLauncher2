@@ -66,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -489,66 +490,73 @@ fun ScreenshotsManagerScreen(
                 .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
             paddingValues = PaddingValues()
         ) {
-            when (viewModel.listState) {
-                is LoadingState.None -> {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            ScreenshotHeader(
-                                modifier = Modifier.fillMaxWidth(),
-                                filter = viewModel.filter,
-                                changeFilter = { viewModel.updateFilter(it) },
-                                supportedSortByEnums = viewModel.supportedSortByEnums,
-                                sortByEnum = viewModel.sortByEnum,
-                                onSortByChanged = { viewModel.updateSortBy(it) },
-                                isAscending = viewModel.isAscending,
-                                onToggleSortOrder = { viewModel.updateSortOrder() },
-                                onDeleteAll = { viewModel.requestDeleteSelected() },
-                                isFilesSelected = viewModel.selectedShots.isNotEmpty(),
-                                onSelectAll = { viewModel.selectAllFiles() },
-                                onClearFilesSelected = { viewModel.clearSelected() },
-                                onRefresh = { viewModel.refresh() }
-                            )
-
-                            ScreenshotGrid(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                list = viewModel.filteredScreenshots,
-                                selected = viewModel.selectedShots,
-                                removeFromSelected = { viewModel.selectedShots.remove(it) },
-                                addToSelected = { viewModel.selectedShots.add(it) }
-                            )
-                        }
-
-                        //导出图片悬浮按钮
-                        if (viewModel.allScreenshots.isNotEmpty()) {
-                            FloatingActionButton(
-                                onClick = {
-                                    if (viewModel.listState != LoadingState.Loading) {
-                                        viewModel.exportOperation = ExportOperation.Ask
-                                    }
-                                },
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(16.dp),
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_file_export_outlined),
-                                    contentDescription = stringResource(R.string.screenshots_manage_export)
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = false,
+                enabled = viewModel.listState !is LoadingState.Loading,
+                onRefresh = viewModel::refresh,
+            ) {
+                when (viewModel.listState) {
+                    is LoadingState.None -> {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                ScreenshotHeader(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    filter = viewModel.filter,
+                                    changeFilter = { viewModel.updateFilter(it) },
+                                    supportedSortByEnums = viewModel.supportedSortByEnums,
+                                    sortByEnum = viewModel.sortByEnum,
+                                    onSortByChanged = { viewModel.updateSortBy(it) },
+                                    isAscending = viewModel.isAscending,
+                                    onToggleSortOrder = { viewModel.updateSortOrder() },
+                                    onDeleteAll = { viewModel.requestDeleteSelected() },
+                                    isFilesSelected = viewModel.selectedShots.isNotEmpty(),
+                                    onSelectAll = { viewModel.selectAllFiles() },
+                                    onClearFilesSelected = { viewModel.clearSelected() },
+                                    onRefresh = { viewModel.refresh() }
                                 )
+
+                                ScreenshotGrid(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    list = viewModel.filteredScreenshots,
+                                    selected = viewModel.selectedShots,
+                                    removeFromSelected = { viewModel.selectedShots.remove(it) },
+                                    addToSelected = { viewModel.selectedShots.add(it) }
+                                )
+                            }
+
+                            //导出图片悬浮按钮
+                            if (viewModel.allScreenshots.isNotEmpty()) {
+                                FloatingActionButton(
+                                    onClick = {
+                                        if (viewModel.listState != LoadingState.Loading) {
+                                            viewModel.exportOperation = ExportOperation.Ask
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(16.dp),
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_file_export_outlined),
+                                        contentDescription = stringResource(R.string.screenshots_manage_export)
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                is LoadingState.Loading -> {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LoadingIndicator()
+                    is LoadingState.Loading -> {
+                        Box(
+                            Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LoadingIndicator()
+                        }
                     }
                 }
             }

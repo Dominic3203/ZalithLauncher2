@@ -62,6 +62,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -274,10 +275,13 @@ private fun TrashContent(
 
     val contentState = if (list.loading) null else list.items
 
-    Box(
+    PullToRefreshBox(
         modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer { alpha = contentAlpha.value }
+            .graphicsLayer { alpha = contentAlpha.value },
+        isRefreshing = false,
+        enabled = !list.loading,
+        onRefresh = vm::refreshTrashList,
     ) {
         AnimatedContent(
             targetState = contentState,

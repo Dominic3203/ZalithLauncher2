@@ -64,6 +64,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.nonInteractiveScrollbar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -544,61 +545,68 @@ fun ServerListScreen(
                 .offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
             paddingValues = PaddingValues()
         ) {
-            when (viewModel.operation) {
-                is ServerListOperation.Loading -> {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LoadingIndicator()
+            PullToRefreshBox(
+                modifier = Modifier.fillMaxSize(),
+                isRefreshing = false,
+                enabled = viewModel.operation !is ServerListOperation.Loading,
+                onRefresh = viewModel::loadServer,
+            ) {
+                when (viewModel.operation) {
+                    is ServerListOperation.Loading -> {
+                        Box(
+                            Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LoadingIndicator()
+                        }
                     }
-                }
-                is ServerListOperation.LoadedData -> {
-                    val servers by viewModel.servers.collectAsStateWithLifecycle()
+                    is ServerListOperation.LoadedData -> {
+                        val servers by viewModel.servers.collectAsStateWithLifecycle()
 
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ServerListHeader(
-                            searchName = viewModel.searchName,
-                            onSearchNameChange = {
-                                viewModel.searchName = it
-                                viewModel.filterServers()
-                            },
-                            onAddServer = {
-                                viewModel.dataOperation = ServerDataOperation.AddServer
-                            },
-                            refreshServers = {
-                                viewModel.loadServer()
-                            }
-                        )
+                        Column(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            ServerListHeader(
+                                searchName = viewModel.searchName,
+                                onSearchNameChange = {
+                                    viewModel.searchName = it
+                                    viewModel.filterServers()
+                                },
+                                onAddServer = {
+                                    viewModel.dataOperation = ServerDataOperation.AddServer
+                                },
+                                refreshServers = {
+                                    viewModel.loadServer()
+                                }
+                            )
 
-                        ServerListBody(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            servers = servers,
-                            isSavingServer = viewModel.saving,
-                            onLoad = { viewModel.loadServer(it) },
-                            onRefresh = { viewModel.loadServer(it, true) },
-                            onCopy = { viewModel.copy(context, it) },
-                            onPlay = { address ->
-                                onQuickPlay(version, address)
-                            },
-                            onEdit = { data ->
-                                viewModel.dataOperation = ServerDataOperation.EditServer(data)
-                            },
-                            onDelete = { data ->
-                                viewModel.dataOperation = ServerDataOperation.DeleteServer(data)
-                            },
-                            onAddToHome = { server ->
-                                ServerCardManager.addCard(
-                                    name = server.name,
-                                    serverIp = server.originIp,
-                                    icon = server.icon
-                                )
-                            }
-                        )
+                            ServerListBody(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                servers = servers,
+                                isSavingServer = viewModel.saving,
+                                onLoad = { viewModel.loadServer(it) },
+                                onRefresh = { viewModel.loadServer(it, true) },
+                                onCopy = { viewModel.copy(context, it) },
+                                onPlay = { address ->
+                                    onQuickPlay(version, address)
+                                },
+                                onEdit = { data ->
+                                    viewModel.dataOperation = ServerDataOperation.EditServer(data)
+                                },
+                                onDelete = { data ->
+                                    viewModel.dataOperation = ServerDataOperation.DeleteServer(data)
+                                },
+                                onAddToHome = { server ->
+                                    ServerCardManager.addCard(
+                                        name = server.name,
+                                        serverIp = server.originIp,
+                                        icon = server.icon
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
