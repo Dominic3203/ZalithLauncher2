@@ -35,7 +35,6 @@ import android.view.Surface
 import android.view.TextureView
 import android.view.TextureView.SurfaceTextureListener
 import android.view.ViewGroup
-import android.view.WindowInsets as AndroidWindowInsets
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -131,6 +130,7 @@ import java.io.File
 import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
 import android.graphics.Color as NativeColor
+import android.view.WindowInsets as AndroidWindowInsets
 
 
 private const val INTENT_RUN_GAME = "BUNDLE_RUN_GAME"
@@ -810,8 +810,12 @@ class VMActivity : BaseAppCompatActivity(), SurfaceTextureListener {
     }
 
     private fun clearSurfaceFrameRate() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            gameSurface?.clearFrameRate()
+        gameSurface?.let { surface ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                surface.clearFrameRate()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                surface.setFrameRate(0f, Surface.FRAME_RATE_COMPATIBILITY_DEFAULT)
+            }
         }
     }
 
