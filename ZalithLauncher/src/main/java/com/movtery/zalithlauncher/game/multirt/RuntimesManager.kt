@@ -182,6 +182,14 @@ object RuntimesManager {
         val targetXawtLib = dest.child(libFolder, "libawt_xawt.so")
         if (targetXawtLib.exists()) targetXawtLib.delete()
         FileUtils.copyFile(localXawtLib, targetXawtLib)
+
+        // 补装 libjsound.so
+        val localJsoundLib = File(PathManager.DIR_NATIVE_LIB, "libjsound.so")
+        if (localJsoundLib.exists()) {
+            val targetJsoundLib = dest.child(libFolder, "libjsound.so")
+            if (targetJsoundLib.exists()) targetJsoundLib.delete()
+            FileUtils.copyFile(localJsoundLib, targetJsoundLib)
+        }
     }
 
     @Throws(IOException::class)
