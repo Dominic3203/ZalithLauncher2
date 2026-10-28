@@ -57,7 +57,10 @@ class LaunchGameViewModel : ViewModel() {
                     context = activity,
                     version = version,
                     exitActivity = exitActivity,
-                    submitError = submitError,
+                    onError = { message ->
+                        submitError(message)
+                        cancel()
+                    },
                     onReloginRequired = { account ->
                         activity.runOnUiThread {
                             updateOperation(
