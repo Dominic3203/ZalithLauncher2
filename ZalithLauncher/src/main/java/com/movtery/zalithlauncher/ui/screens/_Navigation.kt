@@ -124,14 +124,11 @@ fun rememberSwapTween(): FiniteAnimationSpec<Float> {
 fun <T : Any> rememberTransitionSpec(): AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform {
     val level = AllSettings.launcherAnimateSpeedLevel.state
     return remember(level) {
-        val enterDelay = SwapTimeline.swapTime(SwapTimeline.ENTER_START)
-        val exitDelay = SwapTimeline.swapTime(SwapTimeline.EXIT_WINDOW)
-
         val transform: AnimatedContentTransitionScope<Scene<T>>.() -> ContentTransform = {
-            SwapClock.record()
+            val window = SwapClock.record(initialState, targetState)
             ContentTransform(
-                fadeIn(animationSpec = snap(delayMillis = enterDelay)),
-                fadeOut(animationSpec = snap(delayMillis = exitDelay)),
+                fadeIn(animationSpec = snap(delayMillis = window.enterDelayMillis)),
+                fadeOut(animationSpec = snap(delayMillis = window.exitDelayMillis)),
             )
         }
         transform

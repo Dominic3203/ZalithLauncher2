@@ -38,8 +38,7 @@ object SwapTimeline {
     const val GAP = 30
 
 
-    /** 新页进场起始时刻 */
-    const val ENTER_START = EXIT_WINDOW + GAP
+
     /** 新页单项位移时长 */
     const val ENTER_ITEM = 350
     /** 新页单项淡入时长 */
@@ -92,23 +91,58 @@ object SwapTimeline {
 }
 
 
+/**
+ * 一次页面切换的延迟窗口
+ * @param exitDelayMillis 旧页场景层开始淡出前的等待时长
+ * @param enterDelayMillis 新页场景层开始淡入前的等待时长
+ */
+class SwapWindow(
+    val exitDelayMillis: Int,
+    val enterDelayMillis: Int
+)
+
 object SwapClock {
+    /** 当前切换段落的起始场景；无进行中的切换时为 null */
     @Volatile
-    private var lastStartMillis: Long = Long.MIN_VALUE
+    private var swapInitial: Any? = null
+
+    /** 当前切换段落的目标场景；无进行中的切换时为 null */
+    @Volatile
+    private var swapTarget: Any? = null
+
+    /** 当前切换中，旧内容完成退场的时刻（ms） */
+    @Volatile
+    private var exitEndAtMillis: Long = 0
+
+    /** 当前切换中，新内容允许进场的时刻（ms） */
+    @Volatile
+    var enterAtMillis: Long = 0
+        private set
 
     /**
-     * 场景层切换开始时打点
+     * 场景层切换段落变更时打点，计算本次切换的退场/进场延迟
+     * @param initial 切换段落的起始场景
+     * @param target 切换段落的目标场景
      */
-    fun record() {
-        lastStartMillis = System.nanoTime() / 1_000_000
-    }
-
-    /**
-     * @return 距最近一次切换开始过去的毫秒数；从未发生过切换时返回 [Long.MAX_VALUE]
-     */
-    fun millisSinceLastSwap(): Long {
-        val start = lastStartMillis
-        if (start == Long.MIN_VALUE) return Long.MAX_VALUE
-        return System.nanoTime() / 1_000_000 - start
+    @Synchronized
+    fun record(initial: Any?, target: Any?): SwapWindow {
+        val now = System.nanoTime() / 1_000_000
+        if (initial != target) {
+            // 场景真正发生变更才算一次切换
+            // 否则只是段落回稳（如首次组合、切换动画播放完毕）
+            val continuing = now < enterAtMillis &&
+                    (initial == swapInitial || initial == swapTarget ||
+                            target == swapInitial || target == swapTarget)
+            if (!continuing) {
+                swapInitial = initial
+                swapTarget = target
+                exitEndAtMillis = now + SwapTimeline.swapTime(SwapTimeline.EXIT_WINDOW)
+                enterAtMillis = exitEndAtMillis + SwapTimeline.swapTime(SwapTimeline.GAP)
+            }
+        }
+        return SwapWindow(
+            exitDelayMillis = (exitEndAtMillis - now).coerceAtLeast(0).toInt(),
+            enterDelayMillis = (enterAtMillis - now).coerceAtLeast(0).toInt()
+        )
     }
 }

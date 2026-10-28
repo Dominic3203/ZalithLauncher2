@@ -59,7 +59,7 @@ enum class AnimatedDirection {
 class AnimatedContext(
     val progress: State<Float>,
     val alphaProgress: State<Float>,
-    val isEnter: State<Boolean>,
+    val distanceScale: State<Float>,
     val defaultDirection: AnimatedDirection
 )
 
@@ -96,9 +96,12 @@ private fun rememberAnimatedContext(
         index = index,
         extraDelayMillis = extraDelayMillis
     )
-    val isEnter = rememberUpdatedState(newValue = isVisible)
-    return remember(progress, alphaProgress, isEnter) {
-        AnimatedContext(progress, alphaProgress, isEnter, defaultDirection)
+    val distanceScale = swapAnimateDistanceScaleAsState(
+        isVisible = isVisible,
+        index = index
+    )
+    return remember(progress, alphaProgress, distanceScale) {
+        AnimatedContext(progress, alphaProgress, distanceScale, defaultDirection)
     }
 }
 
@@ -118,8 +121,8 @@ fun Modifier.animated(
     val direction = if (from == AnimatedDirection.Auto) ctx.defaultDirection else from
     if (direction != AnimatedDirection.None) {
         //退场位移距离小于进场：进场滑入全程，退场仅向进入方向溜出一段短距离
-        val distanceScale = if (ctx.isEnter.value) 1f else SwapTimeline.EXIT_DISTANCE_SCALE
-        val hiddenOffset = distance.toPx() * distanceScale * (1f - progress)
+        //位移比例随动画平滑过渡，打断反转时从当前值回退，不会因比例硬切换而跳变
+        val hiddenOffset = distance.toPx() * ctx.distanceScale.value * (1f - progress)
         when (direction) {
             AnimatedDirection.Top -> {
                 translationX = 0f
@@ -197,6 +200,31 @@ private fun swapAnimateAlphaProgressAsState(
     }
     return animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
+        animationSpec = spec
+    )
+}
+
+@Composable
+private fun swapAnimateDistanceScaleAsState(
+    isVisible: Boolean,
+    index: Int
+): State<Float> {
+    if (SwapTimeline.isSwapClosed()) return rememberUpdatedState(newValue = 1f)
+    val spec: TweenSpec<Float> = if (isVisible) {
+        tween(
+            durationMillis = SwapTimeline.swapTime(SwapTimeline.ENTER_ITEM),
+            delayMillis = SwapTimeline.enterStagger(index),
+            easing = LinearEasing
+        )
+    } else {
+        tween(
+            durationMillis = SwapTimeline.swapTime(SwapTimeline.EXIT_ITEM),
+            delayMillis = SwapTimeline.exitStagger(index),
+            easing = LinearEasing
+        )
+    }
+    return animateFloatAsState(
+        targetValue = if (isVisible) 1f else SwapTimeline.EXIT_DISTANCE_SCALE,
         animationSpec = spec
     )
 }

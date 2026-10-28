@@ -24,8 +24,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
@@ -52,19 +55,11 @@ fun BaseScreen(
         isTagVisible(screenKey, currentKey, useClassEquality)
     }
 
-    //初始不可见，用于触发首次的 false -> true 动画
-    val visibleState = remember { mutableStateOf(false) }
-
-    //仅在 composition 完成后，才允许更新可见状态
-    LaunchedEffect(targetVisible) {
-        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
-        if (targetVisible) awaitEnterStart()
-        visibleState.value = targetVisible
-    }
+    val visible = rememberVisibleState(targetVisible)
 
     BaseScreen(
         content = content,
-        visible = visibleState.value
+        visible = visible
     )
 }
 
@@ -83,19 +78,11 @@ fun BaseScreen(
         }
     }
 
-    //初始不可见，用于触发首次的 false -> true 动画
-    val visibleState = remember { mutableStateOf(false) }
-
-    //仅在 composition 完成后，才允许更新可见状态
-    LaunchedEffect(targetVisible) {
-        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
-        if (targetVisible) awaitEnterStart()
-        visibleState.value = targetVisible
-    }
+    val visible = rememberVisibleState(targetVisible)
 
     BaseScreen(
         content = content,
-        visible = visibleState.value
+        visible = visible
     )
 }
 
@@ -118,24 +105,40 @@ fun BaseScreen(
         v1 && v2
     }
 
-    //初始不可见，用于触发首次的 false -> true 动画
-    val visibleState = remember { mutableStateOf(false) }
-
-    //仅在 composition 完成后，才允许更新可见状态
-    LaunchedEffect(targetVisible) {
-        //进场需等待页面切换的串行时间轴到新页进场时刻，退场立即开始
-        if (targetVisible) awaitEnterStart()
-        visibleState.value = targetVisible
-    }
+    val visible = rememberVisibleState(targetVisible)
 
     BaseScreen(
         content = content,
-        visible = visibleState.value
+        visible = visible
     )
 }
 
+@Composable
+private fun rememberVisibleState(targetVisible: Boolean): Boolean {
+    val visibleState = remember { mutableStateOf(false) }
+    //最近一次真实退场的开始时刻，-1 表示当前不在退场流程中
+    var exitStartAt by remember { mutableLongStateOf(-1L) }
+
+    //仅在 composition 完成后，才允许更新可见状态
+    LaunchedEffect(targetVisible) {
+        if (targetVisible) {
+            //退场动画仍在播放时被反向打断，立即倒推回归
+            val reversingExit = exitStartAt >= 0 &&
+                    System.nanoTime() / 1_000_000 - exitStartAt <
+                    SwapTimeline.swapTime(SwapTimeline.EXIT_WINDOW)
+            exitStartAt = -1L
+            if (!reversingExit) awaitEnterStart()
+        } else if (visibleState.value) {
+            //记录真实退场的开始时刻
+            exitStartAt = System.nanoTime() / 1_000_000
+        }
+        visibleState.value = targetVisible
+    }
+    return visibleState.value
+}
+
 private suspend fun awaitEnterStart() {
-    val waitMillis = SwapTimeline.swapTime(SwapTimeline.ENTER_START) - SwapClock.millisSinceLastSwap()
+    val waitMillis = SwapClock.enterAtMillis - System.nanoTime() / 1_000_000
     if (waitMillis > 0) delay(waitMillis.milliseconds)
 }
 
