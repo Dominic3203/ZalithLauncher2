@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilledTonalButton
@@ -50,6 +51,7 @@ import androidx.compose.material3.nonInteractiveScrollbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,15 +60,29 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.movtery.zalithlauncher.R
-import com.movtery.zalithlauncher.game.plugin.renderer_v2.data.EnvSettingUnit
+import com.movtery.zalithlauncher.game.renderer.ConfigurableRenderer
+import com.movtery.zalithlauncher.game.renderer.Renderers
+import com.movtery.zalithlauncher.game.renderer.config.ConfigEntryState
+import com.movtery.zalithlauncher.game.renderer.config.ConfigScalar
+import com.movtery.zalithlauncher.game.renderer.config.ConfigText
+import com.movtery.zalithlauncher.game.renderer.config.GlobalRendererConfigStore
+import com.movtery.zalithlauncher.game.renderer.config.NumberEntry
+import com.movtery.zalithlauncher.game.renderer.config.RendererConfigSession
+import com.movtery.zalithlauncher.game.renderer.config.SingleChoiceEntry
+import com.movtery.zalithlauncher.game.renderer.config.SwitchEntry
+import com.movtery.zalithlauncher.game.renderer.config.TextEntry
+import com.movtery.zalithlauncher.game.renderer.config.VersionRendererConfigStore
 import com.movtery.zalithlauncher.ui.components.DefaultSwitch
 import com.movtery.zalithlauncher.ui.components.ImePanContainer
 import com.movtery.zalithlauncher.ui.components.MarqueeText
 import com.movtery.zalithlauncher.ui.components.OwnOutlinedTextField
+import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.SimpleListItem
 import com.movtery.zalithlauncher.ui.components.SingleLineTextCheck
 import com.movtery.zalithlauncher.ui.components.TitleAndSummary
@@ -79,18 +95,36 @@ import com.movtery.zalithlauncher.ui.theme.itemColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.ui.theme.onItemColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
- * 新一代渲染器插件的环境变量配置对话框
- * @param units 该渲染器所有可配置的环境变量单元
- * @param onResetToGlobal 重置为全局配置的回调，为 null 时不显示重置按钮
+ * 统一的渲染器配置对话框
  */
 @Composable
-fun RendererV2ConfigDialog(
-    units: List<EnvSettingUnit>,
-    onDismissRequest: () -> Unit,
-    onResetToGlobal: (() -> Unit)? = null
+fun RendererConfigDialog(
+    renderer: ConfigurableRenderer,
+    versionFolder: File? = null,
+    onDismissRequest: () -> Unit
 ) {
+    val rendererId = renderer.getUniqueIdentifier()
+    val sessionState = produceState<RendererConfigSession?>(null, renderer, versionFolder) {
+        value = withContext(Dispatchers.IO) {
+            GlobalRendererConfigStore.migrateLegacy(rendererId, renderer.legacyConfigKeys)
+            val versionStore = versionFolder?.let {
+                VersionRendererConfigStore(it, Renderers.getLegacyRendererIds())
+            }
+            RendererConfigSession(
+                rendererId = rendererId,
+                spec = renderer.configSpec,
+                localStore = versionStore ?: GlobalRendererConfigStore
+            )
+        }
+    }
+    val session = sessionState.value ?: return
+    var showResetDialog by remember { mutableStateOf(false) }
+
     Dialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(
@@ -119,13 +153,11 @@ fun RendererV2ConfigDialog(
                     modifier = Modifier.padding(all = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    //标题
                     MarqueeText(
                         text = stringResource(R.string.settings_renderer_config_title),
                         style = MaterialTheme.typography.titleMedium
                     )
 
-                    //配置项列表
                     val scrollState = rememberLazyListState()
                     LazyColumn(
                         modifier = Modifier
@@ -141,49 +173,39 @@ fun RendererV2ConfigDialog(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         itemsIndexed(
-                            items = units,
-                            key = { _, unit ->
-                                when (unit) {
-                                    is EnvSettingUnit.Selectable -> unit.rawEnv.key
-                                    is EnvSettingUnit.Customizable -> unit.rawEnv.key
-                                    is EnvSettingUnit.Toggleable -> unit.rawEnv.key
-                                }
-                            },
-                            contentType = { _, unit -> unit::class }
-                        ) { index, unit ->
+                            items = session.states,
+                            key = { _, state -> state.entry.id },
+                            contentType = { _, state -> state.entry::class }
+                        ) { index, state ->
                             val position = when {
-                                units.size == 1 -> CardPosition.Single
+                                session.states.size == 1 -> CardPosition.Single
                                 index == 0 -> CardPosition.Top
-                                index == units.lastIndex -> CardPosition.Bottom
+                                index == session.states.lastIndex -> CardPosition.Bottom
                                 else -> CardPosition.Middle
                             }
-                            when (unit) {
-                                is EnvSettingUnit.Selectable -> {
-                                    SelectableEnvItem(unit = unit, position = position)
-                                }
-                                is EnvSettingUnit.Customizable -> {
-                                    CustomizableEnvItem(unit = unit, position = position)
-                                }
-                                is EnvSettingUnit.Toggleable -> {
-                                    ToggleableEnvItem(unit = unit, position = position)
-                                }
+                            when (state.entry) {
+                                is SwitchEntry -> SwitchConfigItem(state, position)
+                                is SingleChoiceEntry -> ChoiceConfigItem(state, position)
+                                is NumberEntry -> NumberConfigItem(state, position)
+                                is TextEntry -> TextConfigItem(state, position)
                             }
                         }
                     }
 
-                    //底部按钮
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (onResetToGlobal == null) {
-                            Arrangement.End
-                        } else {
-                            Arrangement.SpaceBetween
-                        }
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        if (onResetToGlobal != null) {
-                            FilledTonalButton(onClick = onResetToGlobal) {
-                                MarqueeText(text = stringResource(R.string.versions_config_renderer_reset_global))
-                            }
+                        FilledTonalButton(
+                            onClick = { showResetDialog = true },
+                            enabled = session.hasOverrides
+                        ) {
+                            MarqueeText(
+                                text = stringResource(
+                                    if (versionFolder != null) R.string.versions_config_renderer_reset_global
+                                    else R.string.generic_reset
+                                )
+                            )
                         }
                         Button(onClick = onDismissRequest) {
                             MarqueeText(text = stringResource(R.string.generic_close))
@@ -193,11 +215,26 @@ fun RendererV2ConfigDialog(
             }
         }
     }
+
+    if (showResetDialog) {
+        SimpleAlertDialog(
+            title = stringResource(R.string.generic_reset),
+            text = stringResource(
+                if (versionFolder != null) R.string.versions_config_renderer_reset_global_message
+                else R.string.settings_renderer_config_reset_message,
+                renderer.getRendererName()
+            ),
+            onConfirm = {
+                session.resetAll()
+                showResetDialog = false
+            },
+            onDismiss = {
+                showResetDialog = false
+            }
+        )
+    }
 }
 
-/**
- * Dialog 内使用的配置项基础布局
- */
 @Composable
 private fun DialogItemLayout(
     position: CardPosition,
@@ -217,99 +254,118 @@ private fun DialogItemLayout(
     }
 }
 
-/**
- * 环境变量配置项的标题与描述布局
- */
 @Composable
-private fun EnvTitleAndSummary(
-    pluginTitle: String?,
-    envKey: String,
-    modifier: Modifier = Modifier
-) {
-    val envText = stringResource(R.string.settings_renderer_env_title, envKey)
-    if (pluginTitle.isNullOrEmpty()) {
-        TitleAndSummary(
-            modifier = modifier,
-            title = envText
-        )
-    } else {
-        TitleAndSummary(
-            modifier = modifier,
-            title = pluginTitle,
-            summary = envText
-        )
+private fun ConfigText.resolve(): String = when (this) {
+    is ConfigText.Resource -> stringResource(resId)
+    is ConfigText.Dynamic -> value
+}
+
+@Composable
+private fun EntryHeader(state: ConfigEntryState, modifier: Modifier = Modifier) {
+    TitleAndSummary(
+        modifier = modifier,
+        title = state.entry.title?.resolve() ?: state.entry.id,
+        summary = state.entry.description?.resolve()
+    )
+}
+
+@Composable
+private fun ResetEntryButton(state: ConfigEntryState) {
+    if (state.isOverridden) {
+        IconButton(onClick = state::reset) {
+            Icon(
+                painter = painterResource(R.drawable.ic_refresh),
+                contentDescription = stringResource(R.string.generic_reset)
+            )
+        }
     }
 }
 
-/**
- * 选项式环境变量配置项
- */
 @Composable
-private fun SelectableEnvItem(
-    unit: EnvSettingUnit.Selectable,
-    position: CardPosition,
-    modifier: Modifier = Modifier
-) {
-    val hasCheckbox = unit.rawEnv.check != null
-    var expanded by remember { mutableStateOf(false) }
-
-    DialogItemLayout(
-        position = position,
-        modifier = modifier
-    ) {
+private fun SwitchConfigItem(state: ConfigEntryState, position: CardPosition) {
+    val checked = (state.value as? ConfigScalar.BooleanValue)?.value == true
+    DialogItemLayout(position) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = unit.isEnabled) { expanded = !expanded }
-                .then(
-                    if (hasCheckbox) {
-                        Modifier.padding(vertical = 16.dp)
-                            .padding(start = 8.dp, end = 16.dp)
-                    } else Modifier.padding(all = 16.dp)
-                ),
+                .clickable { state.saveValue(ConfigScalar.BooleanValue(!checked)) }
+                .padding(all = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            EntryHeader(state, Modifier.weight(1f))
+
+            DefaultSwitch(
+                checked = checked,
+                onCheckedChange = { state.saveValue(ConfigScalar.BooleanValue(it)) }
+            )
+
+            ResetEntryButton(state)
+        }
+    }
+}
+
+@Composable
+private fun ChoiceConfigItem(state: ConfigEntryState, position: CardPosition) {
+    val entry = state.entry as SingleChoiceEntry
+    val hasCheckbox = entry.defaultEnabled != null
+    val enabled = !hasCheckbox || state.enabled == true
+    var expanded by remember { mutableStateOf(false) }
+    val selected = entry.options.find { it.value.asString() == state.value.asString() }
+
+    DialogItemLayout(position) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = enabled) { expanded = !expanded }
+                .padding(all = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (hasCheckbox) {
                 Checkbox(
-                    checked = unit.isEnabled,
-                    onCheckedChange = { enabled ->
-                        unit.saveCheck(enabled)
-                        if (!enabled) expanded = false
+                    checked = enabled,
+                    onCheckedChange = {
+                        state.saveEnabled(it)
+                        if (!it) expanded = false
                     }
                 )
             }
+
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                EnvTitleAndSummary(
-                    pluginTitle = unit.title,
-                    envKey = unit.rawEnv.key,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                EntryHeader(state)
                 Text(
-                    modifier = Modifier.alpha(if (!hasCheckbox || unit.isEnabled) 0.7f else 0.38f),
-                    text = stringResource(R.string.settings_element_selected, unit.state),
+                    modifier = Modifier.alpha(if (enabled) 0.7f else 0.38f),
+                    text = stringResource(
+                        R.string.settings_element_selected,
+                        selected?.label?.resolve() ?: state.value.asString()
+                    ),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
+
+            ResetEntryButton(state)
             val rotation by animateFloatAsState(
                 targetValue = if (expanded) -180f else 0f,
                 animationSpec = getAnimateTween()
             )
+
             IconButton(
                 modifier = Modifier.rotate(rotation),
-                enabled = unit.isEnabled,
-                onClick = {
-                    if (!hasCheckbox || unit.isEnabled) expanded = !expanded
-                }
+                enabled = enabled,
+                onClick = { expanded = !expanded }
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_arrow_drop_down_rounded),
-                    contentDescription = stringResource(if (expanded) R.string.generic_expand else R.string.generic_collapse)
+                    contentDescription = stringResource(
+                        if (expanded) R.string.generic_collapse else R.string.generic_expand
+                    )
                 )
             }
         }
+
         AnimatedVisibility(
             visible = expanded,
             enter = expandVertically(animationSpec = getAnimateTween()),
@@ -320,13 +376,13 @@ private fun SelectableEnvItem(
                     .fillMaxWidth()
                     .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
             ) {
-                unit.values.forEach { value ->
+                entry.options.forEach { option ->
                     SimpleListItem(
                         modifier = Modifier.fillMaxWidth(),
-                        selected = unit.state == value,
-                        itemName = value,
+                        selected = option.value.asString() == state.value.asString(),
+                        itemName = option.label?.resolve() ?: option.value.asString(),
                         onClick = {
-                            if (unit.state != value) unit.save(value)
+                            state.saveValue(option.value)
                             expanded = false
                         }
                     )
@@ -336,38 +392,31 @@ private fun SelectableEnvItem(
     }
 }
 
-/**
- * 自由填写式环境变量配置项
- */
 @Composable
-private fun CustomizableEnvItem(
-    unit: EnvSettingUnit.Customizable,
-    position: CardPosition,
-    modifier: Modifier = Modifier
-) {
-    DialogItemLayout(
-        position = position,
-        modifier = modifier
-    ) {
+private fun TextConfigItem(state: ConfigEntryState, position: CardPosition) {
+    DialogItemLayout(position) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(all = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            EnvTitleAndSummary(
-                pluginTitle = unit.title,
-                envKey = unit.rawEnv.key
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                EntryHeader(state, Modifier.weight(1f))
+                ResetEntryButton(state)
+            }
+
+            val text = state.value.asString()
             SingleLineTextCheck(
-                text = unit.state,
-                onSingleLined = { unit.save(it) }
+                text = text,
+                onSingleLined = { state.saveValue(ConfigScalar.StringValue(it)) }
             )
+
             OwnOutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
-                value = unit.state,
+                value = text,
                 textStyle = MaterialTheme.typography.labelMedium,
-                onValueChange = { unit.save(it) },
+                onValueChange = { state.saveValue(ConfigScalar.StringValue(it)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.large
             )
@@ -375,38 +424,39 @@ private fun CustomizableEnvItem(
     }
 }
 
-/**
- * 开关式环境变量配置项
- */
 @Composable
-private fun ToggleableEnvItem(
-    unit: EnvSettingUnit.Toggleable,
-    position: CardPosition,
-    modifier: Modifier = Modifier
-) {
-    DialogItemLayout(
-        position = position,
-        modifier = modifier
-    ) {
-        Row(
+private fun NumberConfigItem(state: ConfigEntryState, position: CardPosition) {
+    val entry = state.entry as NumberEntry
+    var text by remember(state.value, state.isOverridden) { mutableStateOf(state.value.asString()) }
+    val parsed = entry.parse(text)
+
+    DialogItemLayout(position) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { unit.save(if (unit.isEnabled) "" else unit.envValue) }
                 .padding(all = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            EnvTitleAndSummary(
-                pluginTitle = unit.title,
-                envKey = unit.rawEnv.key,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 16.dp)
-            )
-            DefaultSwitch(
-                checked = unit.isEnabled,
-                onCheckedChange = { checked ->
-                    unit.save(if (checked) unit.envValue else "")
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                EntryHeader(state, Modifier.weight(1f))
+                ResetEntryButton(state)
+            }
+
+            OwnOutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                value = text,
+                textStyle = MaterialTheme.typography.labelMedium,
+                onValueChange = {
+                    text = it
+                    entry.parse(it)?.let(state::saveValue)
+                },
+                singleLine = true,
+                isError = parsed == null,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (entry.integerOnly) KeyboardType.Number else KeyboardType.Decimal,
+                    imeAction = ImeAction.Done
+                ),
+                shape = MaterialTheme.shapes.large
             )
         }
     }

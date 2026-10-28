@@ -25,6 +25,8 @@ object PanfrostRenderer : RendererInterface {
 
     override fun getUniqueIdentifier(): String = "9b2808c4-11af-4c72-a9c6-94c940396475"
 
+    override val mesaBased: Boolean = true
+
     override fun getRendererName(): String = "Panfrost (Mali)"
 
     override fun getMaxMCVersion(): String = "1.21.4"

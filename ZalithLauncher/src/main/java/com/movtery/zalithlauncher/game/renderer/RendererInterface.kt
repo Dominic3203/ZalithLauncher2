@@ -33,6 +33,11 @@ interface RendererInterface {
     fun getUniqueIdentifier(): String
 
     /**
+     * 渲染器是否基于 Mesa
+     */
+    val mesaBased: Boolean get() = false
+
+    /**
      * 获取渲染器的名称
      */
     fun getRendererName(): String

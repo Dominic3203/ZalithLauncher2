@@ -22,7 +22,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * 版本独立渲染器环境变量配置，序列化保存于版本文件夹下的 renderer.config
+ * 旧版渲染器环境变量配置，仅用于迁移版本文件夹下的 renderer.config
  */
 @Serializable
 data class RendererEnvConfig(
