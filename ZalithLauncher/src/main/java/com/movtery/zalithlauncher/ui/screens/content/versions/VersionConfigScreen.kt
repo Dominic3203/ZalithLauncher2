@@ -46,9 +46,7 @@ import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.control.ControlManager
 import com.movtery.zalithlauncher.game.multirt.RuntimesManager
 import com.movtery.zalithlauncher.game.plugin.driver.DriverPluginManager
-import com.movtery.zalithlauncher.game.plugin.renderer_v2.RendererV2Data
-import com.movtery.zalithlauncher.game.plugin.renderer_v2.data.EnvSettingUnit
-import com.movtery.zalithlauncher.game.plugin.renderer_v2.data.VersionEnvStorage
+import com.movtery.zalithlauncher.game.renderer.ConfigurableRenderer
 import com.movtery.zalithlauncher.game.renderer.Renderers
 import com.movtery.zalithlauncher.game.support.touch_controller.VibrationHandler
 import com.movtery.zalithlauncher.game.version.installed.GraphicsApi
@@ -62,7 +60,6 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.AnimatedColumn
 import com.movtery.zalithlauncher.ui.components.IDItem
-import com.movtery.zalithlauncher.ui.components.SimpleAlertDialog
 import com.movtery.zalithlauncher.ui.components.animated
 import com.movtery.zalithlauncher.ui.components.verticalScrollWithBar
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -72,8 +69,8 @@ import com.movtery.zalithlauncher.ui.screens.content.elements.MemoryPreview
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrophoneCheckOperation
 import com.movtery.zalithlauncher.ui.screens.content.elements.MicrophoneCheckState
 import com.movtery.zalithlauncher.ui.screens.content.settings.DriverSummaryLayout
+import com.movtery.zalithlauncher.ui.screens.content.settings.RendererConfigDialog
 import com.movtery.zalithlauncher.ui.screens.content.settings.RendererSummaryLayout
-import com.movtery.zalithlauncher.ui.screens.content.settings.RendererV2ConfigDialog
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.CardPosition
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.EnumSettingsCard
 import com.movtery.zalithlauncher.ui.screens.content.settings.layouts.IntSliderSettingsCard
@@ -224,16 +221,14 @@ private fun VersionConfigs(
         val renderers = Renderers.getRenderers()
         val renderersIdList = getIDList(renderers) { IDItem(it.getUniqueIdentifier(), it.getRendererName()) }
         var currentRendererId by remember { mutableStateOf(config.renderer) }
-        val v2Plugin = remember(currentRendererId) {
+        val configurableRenderer = remember(currentRendererId) {
             if (currentRendererId.isNotEmpty()) {
-                renderers.filterIsInstance<RendererV2Data>()
+                renderers.filterIsInstance<ConfigurableRenderer>()
                     .find { it.getUniqueIdentifier() == currentRendererId }
-                    ?.takeIf { it.env.getConfigurableUnits().isNotEmpty() }
+                    ?.takeIf { it.configSpec.entries.isNotEmpty() }
             } else null
         }
-        var showV2ConfigDialog by remember { mutableStateOf(false) }
-        var showResetGlobalDialog by remember { mutableStateOf(false) }
-        var v2PluginEnvUnits by remember { mutableStateOf<List<EnvSettingUnit>?>(null) }
+        var showConfigDialog by remember { mutableStateOf(false) }
 
         ListSettingsCard(
             modifier = Modifier.fillMaxWidth(),
@@ -250,15 +245,9 @@ private fun VersionConfigs(
                 }
             },
             trailingIcon = {
-                // 仅当独立指定了具有可配置项的新一代渲染器时提供配置入口；设置跟随全局时不能独立修改
-                if (v2Plugin != null) {
-                    IconButton(
-                        onClick = {
-                            val storage = VersionEnvStorage(config.getVersionPath())
-                            v2PluginEnvUnits = v2Plugin.env.createConfigurableUnits(storage)
-                            showV2ConfigDialog = true
-                        }
-                    ) {
+                // 设置跟随全局时不能独立修改
+                if (configurableRenderer != null) {
+                    IconButton(onClick = { showConfigDialog = true }) {
                         Icon(
                             painter = painterResource(R.drawable.ic_settings_filled),
                             contentDescription = stringResource(R.string.settings_renderer_config_title)
@@ -275,31 +264,11 @@ private fun VersionConfigs(
             }
         )
 
-        // 新一代渲染器插件在当前版本中的独立环境变量配置对话框
-        if (showV2ConfigDialog && v2PluginEnvUnits != null) {
-            RendererV2ConfigDialog(
-                units = v2PluginEnvUnits!!,
-                onDismissRequest = {
-                    showV2ConfigDialog = false
-                    v2PluginEnvUnits = null
-                },
-                onResetToGlobal = { showResetGlobalDialog = true }
-            )
-        }
-
-        if (showResetGlobalDialog) {
-            val rendererName = v2Plugin?.getRendererName().orEmpty()
-            SimpleAlertDialog(
-                title = stringResource(R.string.versions_config_renderer_reset_global),
-                text = stringResource(R.string.versions_config_renderer_reset_global_message, rendererName),
-                onConfirm = {
-                    showResetGlobalDialog = false
-                    // 删除整个独立配置文件，放弃本版本的全部独立环境变量配置
-                    VersionEnvStorage(config.getVersionPath()).delete()
-                    showV2ConfigDialog = false
-                    v2PluginEnvUnits = null
-                },
-                onDismiss = { showResetGlobalDialog = false }
+        if (showConfigDialog && configurableRenderer != null) {
+            RendererConfigDialog(
+                renderer = configurableRenderer,
+                versionFolder = config.getVersionPath(),
+                onDismissRequest = { showConfigDialog = false }
             )
         }
 

@@ -27,6 +27,8 @@ object VirGLRenderer : RendererInterface {
 
     override fun getUniqueIdentifier(): String = "a3ccc1fe-de3f-4a81-8c45-2485181b63b3"
 
+    override val mesaBased: Boolean = true
+
     override fun getRendererName(): String = "VirGLRenderer"
 
     override fun getMaxMCVersion(): String = "26.3-snapshot-3"

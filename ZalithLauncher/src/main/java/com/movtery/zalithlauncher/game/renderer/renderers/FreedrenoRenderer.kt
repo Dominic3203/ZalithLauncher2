@@ -25,6 +25,8 @@ object FreedrenoRenderer : RendererInterface {
 
     override fun getUniqueIdentifier(): String = "1ad7249f-5784-4f00-bc72-174b3578ee46"
 
+    override val mesaBased: Boolean = true
+
     override fun getRendererName(): String = "Freedreno (Adreno)"
 
     override fun getMaxMCVersion(): String = "26.3-snapshot-3"

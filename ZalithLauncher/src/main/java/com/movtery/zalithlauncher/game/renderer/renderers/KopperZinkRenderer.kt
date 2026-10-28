@@ -25,6 +25,8 @@ object KopperZinkRenderer : RendererInterface {
 
     override fun getUniqueIdentifier(): String = "0fa435e2-46df-45c9-906c-b29606aaef00"
 
+    override val mesaBased: Boolean = true
+
     override fun getRendererName(): String = "Kopper Zink"
 
     override fun getMaxMCVersion(): String = "26.3-snapshot-3"

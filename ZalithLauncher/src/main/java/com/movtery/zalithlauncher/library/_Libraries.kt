@@ -67,6 +67,7 @@ val libraryData = listOf(
     LibraryInfo("Maven Artifact", "Copyright © The Apache Software Foundation", LICENSE_APACHE_2, "https://github.com/apache/maven/tree/maven-3.9.9/maven-artifact"),
     LibraryInfo("Media3", COPYRIGHT_AOSP, LICENSE_APACHE_2, "https://developer.android.com/jetpack/androidx/releases/media3"),
     LibraryInfo("Mesa", "Copyright © The Mesa Authors", License(LICENSE_MIT, R.raw.mesa_license), "https://mesa3d.org/"),
+    LibraryInfo("MobileGlues", "Copyright © 2025-2026 MobileGL-Dev", License("LGPL-2.1 License", R.raw.lgpl_2_1_license), "https://github.com/MobileGL-Dev/MobileGlues"),
     LibraryInfo("MMKV", "Copyright © 2018 THL A29 Limited, a Tencent company.", License(LICENSE_BSD_3_CLAUSE, R.raw.mmkv_license), "https://github.com/Tencent/MMKV"),
     LibraryInfo("Navigation 3", COPYRIGHT_AOSP, LICENSE_APACHE_2, "https://developer.android.com/jetpack/androidx/releases/navigation3"),
     LibraryInfo("NG-GL4ES", "Copyright © 2016-2018 Sebastien Chevalier; Copyright © 2013-2016 Ryan Hileman; Copyright © 2025-2026 BZLZHH", License(LICENSE_MIT, R.raw.ng_gl4es_license), "https://github.com/BZLZHH/NG-GL4ES"),
@@ -79,6 +80,7 @@ val libraryData = listOf(
     LibraryInfo("sdl2-compat", "Copyright (C) 2026 Sam Lantinga <slouken@libsdl.org>", License("Zlib License", R.raw.sdl2_compat_license), "https://github.com/libsdl-org/sdl2-compat"),
     LibraryInfo("SDL3", "Copyright (C) 1997-2026 Sam Lantinga <slouken@libsdl.org>", License("Zlib License", R.raw.sdl3_license), "https://github.com/libsdl-org/SDL"),
     LibraryInfo("sora-editor", "Copyright (C) 2020-2026  Rosemoe", License("LGPL-2.1 License", R.raw.sora_editor_license), "https://github.com/Rosemoe/sora-editor"),
+    LibraryInfo("SimpleFPEWrapper", "Copyright © 2026 MobileGL-Dev", License(LICENSE_LGPL_3, R.raw.lgpl_3_license), "https://github.com/MobileGL-Dev/SimpleFPEWrapper"),
     LibraryInfo("Terracotta", "Copyright © 2025 Burning_TNT", License(LICENSE_AGPL_3, net.burningtnt.terracotta.R.raw.terracotta_license), "https://github.com/burningtnt/Terracotta"),
     LibraryInfo("tm4e (TextMate for Eclipse)", "Copyright © Eclipse Foundation", License("EPL-2.0 License", R.raw.tm4e_license), "https://github.com/eclipse-tm4e/tm4e"),
     LibraryInfo("XZ for Java", "Copyright © The XZ for Java authors and contributors", License("0BSD License", R.raw.xz_java_license), "https://tukaani.org/xz/java.html")
